@@ -10,7 +10,7 @@ module.exports = function(grunt) {
             },
             scripts: {
                 files: ['src/**/*.js', 'test/**/*.js'],
-                tasks: ['jshint', 'simplemocha:unit']
+                tasks: ['jshint', 'simplemocha']
             }
         },
         jshint: {

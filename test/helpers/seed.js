@@ -24,7 +24,7 @@ seed.deleteDatabase = function (name, callback) {
 
 seed.seedDatabase = function (name, callback) {
     console.log('Seeding ' + name);
-    seed.deleteDatabase(name, function (err, res, body) {
+    seed.deleteDatabase(name, function (err) {
         if (!databases[name]) {
             return callback(err);
         }
@@ -45,15 +45,15 @@ seed.seedDatabase = function (name, callback) {
 
 seed.requireSeed = function () {
     return {
-        "Tests require database seeding": {
+        'Tests require database seeding': {
             topic: function () {
-                async.forEach(Object.keys(databases), seed.seedDatabase, this.callback)
+                async.forEach(Object.keys(databases), seed.seedDatabase, this.callback);
             },
-            "should respond with no errors": function (err) {
+            'should respond with no errors': function (err) {
                 assert.isTrue(!err);
             }
         }
-    }
+    };
 };
 
 if (!module.parent) {
