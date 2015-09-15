@@ -1,0 +1,15 @@
+{
+  "name": "cradle-auditify",
+  "version": "0.0.1",
+  "dependencies": {
+    "cradle": "^0.6.9",
+    "lodash": "^3.10.1"
+  },
+  "devDependencies": {
+    "grunt": "^0.4.5",
+    "grunt-contrib-jshint": "~0.10.0",
+    "grunt-contrib-watch": "^0.6.1",
+    "grunt-simple-mocha": "^0.4.0",
+    "sinon": "^1.16.1"
+  }
+}
