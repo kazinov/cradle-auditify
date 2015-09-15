@@ -192,7 +192,7 @@ describe('class: AuditableDatabase', function () {
             auditableDatabase.save = function (doc, callback) {
                 setTimeout(function () {
                     fakeSaveFunction(doc, callback);
-                }, 1);
+                }, 3);
             };
             saveSpy = sinon.spy(auditableDatabase, 'save');
         });
@@ -247,7 +247,11 @@ describe('class: AuditableDatabase', function () {
                 beforeEach(function () {
                     var auditOptions = _.assign({}, auditOptions);
                     auditableDatabase = new AuditableDatabase('fake', fakeConnection, auditOptions);
-                    auditableDatabase.save = fakeSaveFunction;
+                    auditableDatabase.save = function (doc, callback) {
+                        setTimeout(function () {
+                            fakeSaveFunction(doc, callback);
+                        }, 3);
+                    };
                     saveSpy = sinon.spy(auditableDatabase, 'save');
                 });
 
@@ -298,7 +302,6 @@ describe('class: AuditableDatabase', function () {
                     assert.ok(!!timestampBefore);
                     assert.ok(!!timestampAfter);
                     assert.ok(new Date(timestampAfter) > new Date(timestampBefore));
-
                     assert.equal(
                         saveSpy.getCall(1).args[0]['a_metadata'][auditOptions.originIdFieldName],
                         '111'

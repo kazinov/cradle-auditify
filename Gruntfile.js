@@ -28,7 +28,7 @@ module.exports = function(grunt) {
         },
 
         simplemocha: {
-            unit: {
+            all: {
                 src: [
                     'test/**/*.js'
                 ]
