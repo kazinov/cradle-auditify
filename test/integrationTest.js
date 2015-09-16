@@ -122,7 +122,7 @@ describe('integration tests', function() {
     var connection, db;
     beforeEach(function () {
         connection = new (cradle.Connection)('127.0.0.1', 5984, { cache: false });
-        db = connection.database('pigs')
+        db = connection.database('pigs');
         db = cradleAuditify(db);
     });
 
@@ -419,10 +419,11 @@ describe('integration tests', function() {
                 newDocRev = res.rev;
 
                 // delete
-                db.auditableRemove(newDocId, newDocRev, auditMetadata, function (err) {
+                db.auditableRemove(newDocId, newDocRev, auditMetadata, function (err, res) {
                     if (err) {
                         done(err);
                     }
+                    console.log('REMOVE RES: ' + JSON.stringify(res));
                 });
             });
 

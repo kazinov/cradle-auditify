@@ -1,6 +1,4 @@
-var cradle = require('cradle'),
-    util = require('util'),
-    _ = require('lodash'),
+var _ = require('lodash'),
     events = require('events');
 
 /**
@@ -25,20 +23,12 @@ var defaultOptions = {
  * @param {object} auditMetadata document to be embeded to audit copy, optional */
 function auditableSave(doc, auditMetadata, callback) {
     var that = this;
-    auditMetadata = auditMetadata || {};
-    auditMetadata[this.auditOptions.timestampBeforeFieldName] = new Date().toISOString();
+    auditMetadata = initializeAuditMetadata(auditMetadata, this.auditOptions);
 
     that.save(doc, function (err, res) {
-        if (err) {
-            return callback(err);
-        }
-
-        var docToArchive = mergeSaveResultToDoc(doc, res);
-        that._archive(docToArchive, auditMetadata);
-
-        return callback(null, res);
+        return that._auditCallbackHandler(err, res, doc, auditMetadata, callback);
     });
-};
+}
 
 /** Remove doc and save audit copy.
  * Callback is being invoked as soon as remove operation ended.
@@ -48,54 +38,70 @@ function auditableSave(doc, auditMetadata, callback) {
  * @param {object} auditMetadata document to be embeded to audit copy, optional */
 function auditableRemove(id, rev, auditMetadata, callback) {
     var that = this;
-    auditMetadata = auditMetadata || {};
-
-    var docToArchive = {
-        _id: id,
-        _rev: rev,
-        _deleted: true
-    };
-    auditMetadata[this.auditOptions.timestampBeforeFieldName] = new Date().toISOString();
+    auditMetadata = initializeAuditMetadata(auditMetadata, this.auditOptions);
 
     that.remove(id, rev, function (err, res) {
-        if (err) {
-            return callback(err);
-        }
-
-        that._archive(docToArchive, auditMetadata);
-        return callback(null, res);
+        var doc = {
+            _id: id,
+            _rev: rev,
+            _deleted: true
+        };
+        return that._auditCallbackHandler(err, res, doc, auditMetadata, callback);
     });
-};
+}
 
 function _archive(doc, auditMetadata) {
     var auditDocument = createAuditDocument(doc, auditMetadata, this.auditOptions);
     this.save(auditDocument, this._onArchived.bind(this));
-};
+}
 
 function _onArchived (err, res) {
     if (err) {
         return this.auditEvents.emit('error', err);
     }
     this.auditEvents.emit('archived', res);
-};
+}
+
+function _auditCallbackHandler(err, res, doc, auditMetadata, callback) {
+    if (err) {
+        return callback(err);
+    }
+
+    var docToArchive = mergeSaveResultToDoc(doc, res);
+    this._archive(docToArchive, auditMetadata);
+    return callback(null, res);
+}
+
+function initializeAuditMetadata(auditMetadata, options){
+    auditMetadata = auditMetadata || {};
+    setTimestamp(auditMetadata, options.timestampBeforeFieldName);
+    return auditMetadata;
+}
+
+function setTimestamp(obj, field) {
+    obj[field] = new Date().toISOString();
+}
 
 function mergeSaveResultToDoc(doc, saveResult) {
     if (Array.isArray(doc) && Array.isArray(saveResult) && doc.length === saveResult.length) {
         saveResult.forEach(function (item, i) {
-            doc[i]._id = item.id;
+            setId(doc[i], item);
         });
         return doc;
     } else if (!Array.isArray(doc) && !Array.isArray(saveResult)) {
-        doc._id = saveResult.id;
+        setId(doc, saveResult);
         return doc;
     }
 
+    function setId(doc, res) {
+        doc._id = res.id;
+    }
     throw new Error('Unexpected parameters');
-};
+}
 
 function createAuditDocument(doc, auditMetadata, options) {
     auditMetadata = auditMetadata || {};
-    auditMetadata[options.timestampAfterFieldName] = new Date().toISOString();
+    setTimestamp(auditMetadata, options.timestampAfterFieldName);
 
     if (Array.isArray(doc)) {
         return doc.map(function (item) {
@@ -106,6 +112,10 @@ function createAuditDocument(doc, auditMetadata, options) {
     }
 
     function transform(doc) {
+        if (!doc._id) {
+            throw new Error('Can not create audit document without originId');
+        }
+
         var audit,
             auditMetadataForDoc = _.assign({}, auditMetadata),
             deleted = doc._deleted || false;
@@ -139,8 +149,7 @@ function createAuditDocument(doc, auditMetadata, options) {
 
         return audit;
     }
-};
-
+}
 
 /**
  * extends cradle database instance with auditableSave, auditableRemove methods.
@@ -157,6 +166,7 @@ module.exports = function (db, options) {
     db.auditableRemove = auditableRemove;
     db._archive = _archive;
     db._onArchived = _onArchived;
+    db._auditCallbackHandler = _auditCallbackHandler;
 
     return db;
 };

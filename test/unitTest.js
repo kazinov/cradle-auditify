@@ -99,7 +99,7 @@ describe('unit tests', function () {
             saveSpy = sinon.spy(auditableDatabase, 'save');
 
             auditableDatabase.remove = function (id, rev, callback) {
-                callback(null, { _id: id });
+                callback(null, { id: id });
             };
             removeSpy = sinon.spy(auditableDatabase, 'remove');
         });
