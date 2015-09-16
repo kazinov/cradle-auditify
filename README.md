@@ -156,7 +156,7 @@ API
  });
  ```
  
- ### auditablePut() ###
+### auditablePut() ###
  
  A wrapper for original Cradle ```put``` method.
 
@@ -179,7 +179,7 @@ API
  });
  ```
  
- ### auditablePost() ###
+### auditablePost() ###
  
  A wrapper for original Cradle ```post``` method.
 
@@ -200,7 +200,7 @@ API
  });
  ```
  
- ### auditablePut() ###
+### auditablePut() ###
  
  A wrapper for original Cradle ```put``` method.
 
@@ -223,7 +223,7 @@ API
  });
  ```
  
- ### auditableRemove() ###
+### auditableRemove() ###
  
  A wrapper for original Cradle ```remove``` method.
 
