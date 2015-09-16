@@ -120,7 +120,7 @@ API
  db = cradleAuditify(db);
  ```
 
-### Configuration ### 
+### Configuration ###
 
  Options can be passed to ```cradleAuditify``` function as a second parameter. 
  
