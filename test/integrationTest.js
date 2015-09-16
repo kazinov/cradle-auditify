@@ -122,7 +122,8 @@ describe('integration tests', function() {
     var connection, db;
     beforeEach(function () {
         connection = new (cradle.Connection)('127.0.0.1', 5984, { cache: false });
-        db = cradleAuditify('pigs', connection);
+        db = connection.database('pigs')
+        db = cradleAuditify(db);
     });
 
     describe('method auditableSave()', function () {

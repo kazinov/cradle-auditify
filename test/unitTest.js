@@ -1,6 +1,6 @@
 var assert = require('assert'),
     sinon = require('sinon'),
-    AuditableDatabase = require('../src/AuditableDatabase'),
+    auditify = require('../src/cradleAuditify'),
     _ = require('lodash');
 
 function createSaveResponse (doc) {
@@ -26,12 +26,9 @@ function fakeSaveFunction (doc, callback) {
     callback(null, response);
 }
 
-describe('class: AuditableDatabase', function () {
+describe('unit tests', function () {
     var auditOptions,
-        auditableDatabase,
-        fakeConnection = {
-            options: {}
-        };
+        auditableDatabase;
 
 
     beforeEach(function () {
@@ -50,7 +47,7 @@ describe('class: AuditableDatabase', function () {
 
     describe('ctor', function () {
         it('sets audit options properly when overrided', function (done) {
-            auditableDatabase = new AuditableDatabase('fake', fakeConnection, {
+            auditableDatabase = auditify({}, {
                 originIdFieldName: 'originIdFieldName_test',
                 timestampBeforeFieldName: 'timestampBeforeFieldName_test',
                 deletedFieldName: 'deletedFieldName_test'
@@ -63,7 +60,7 @@ describe('class: AuditableDatabase', function () {
         });
 
         it('sets audit options properly when overrided only part of properties', function (done) {
-            auditableDatabase = new AuditableDatabase('fake', fakeConnection, {
+            auditableDatabase = auditify({}, {
                 originIdFieldName: 'originIdFieldName_test'
             });
             assert.equal(auditableDatabase.auditOptions.originIdFieldName, 'originIdFieldName_test');
@@ -73,7 +70,7 @@ describe('class: AuditableDatabase', function () {
         });
 
         it('sets default audit options when options param is not defined', function (done) {
-            auditableDatabase = new AuditableDatabase('fake', fakeConnection);
+            auditableDatabase = auditify({});
 
             assert.equal(auditableDatabase.auditOptions.originIdFieldName, 'a_originId');
             assert.equal(auditableDatabase.auditOptions.timestampBeforeFieldName, 'a_timestampBefore');
@@ -86,7 +83,7 @@ describe('class: AuditableDatabase', function () {
         var saveSpy, removeSpy;
 
         before(function () {
-            auditableDatabase = new AuditableDatabase('fake', fakeConnection, auditOptions);
+            auditableDatabase = auditify({}, auditOptions);
         });
 
         beforeEach(function () {
@@ -184,24 +181,16 @@ describe('class: AuditableDatabase', function () {
     });
 
     describe('auditableSave() method', function () {
-        var saveSpy,
-            mergeSaveResultToDocSpy = sinon.spy(AuditableDatabase, 'mergeSaveResultToDoc');
+        var saveSpy;
 
         beforeEach(function () {
-            auditableDatabase = new AuditableDatabase('fake', fakeConnection, auditOptions);
+            auditableDatabase = auditify({}, auditOptions);
             auditableDatabase.save = function (doc, callback) {
                 setTimeout(function () {
                     fakeSaveFunction(doc, callback);
                 }, 3);
             };
             saveSpy = sinon.spy(auditableDatabase, 'save');
-        });
-
-        it('calls mergeSaveResultToDoc() method', function (done) {
-            auditableDatabase.auditableSave({ test: 'test' }, {}, function () {
-                assert.ok(mergeSaveResultToDocSpy.called);
-                done();
-            });
         });
 
         it('calls save twice', function (done) {
@@ -246,7 +235,7 @@ describe('class: AuditableDatabase', function () {
             describe('when docs in input array dont have _id ', function () {
                 beforeEach(function () {
                     var auditOptions = _.assign({}, auditOptions);
-                    auditableDatabase = new AuditableDatabase('fake', fakeConnection, auditOptions);
+                    auditableDatabase = auditify({}, auditOptions);
                     auditableDatabase.save = function (doc, callback) {
                         setTimeout(function () {
                             fakeSaveFunction(doc, callback);
@@ -498,21 +487,21 @@ describe('class: AuditableDatabase', function () {
                     id: 'some_id'
                 };
 
-                var docUpdated = AuditableDatabase.mergeSaveResultToDoc(doc, saveResult);
+                var docUpdated = auditify.mergeSaveResultToDoc(doc, saveResult);
                 assert.equal(docUpdated._id, saveResult.id);
                 done();
             });
 
             it('throws an error when doc is not an array and saveResults is an array', function (done) {
                 assert.throws(function () {
-                    AuditableDatabase.mergeSaveResultToDoc({}, [{}, {}]);
+                    auditify.mergeSaveResultToDoc({}, [{}, {}]);
                 }, Error);
                 done();
             });
 
             it('throws an error when doc is array and saveResults is not an array', function (done) {
                 assert.throws(function () {
-                    AuditableDatabase.mergeSaveResultToDoc([{}, {}], {});
+                    auditify.mergeSaveResultToDoc([{}, {}], {});
                 }, Error);
                 done();
             });
@@ -539,7 +528,7 @@ describe('class: AuditableDatabase', function () {
                         }
                     ];
 
-                var docUpdated = AuditableDatabase.mergeSaveResultToDoc(doc, saveResult);
+                var docUpdated = auditify.mergeSaveResultToDoc(doc, saveResult);
                 assert.equal(docUpdated[0]._id, saveResult[0].id);
                 assert.equal(docUpdated[1]._id, saveResult[1].id);
                 done();
@@ -547,7 +536,7 @@ describe('class: AuditableDatabase', function () {
 
             it('throws an error when doc and saveResult arrays have different lengths', function (done) {
                 assert.throws(function () {
-                    AuditableDatabase.mergeSaveResultToDoc([{}, {}, {}], [{}, {}]);
+                    auditify.mergeSaveResultToDoc([{}, {}, {}], [{}, {}]);
                 }, Error);
                 done();
             });
@@ -567,7 +556,7 @@ describe('class: AuditableDatabase', function () {
             });
 
             it('sets auditMetadataFieldName field', function (done) {
-                var auditDoc = AuditableDatabase.createAuditDocument(originalDocument, {
+                var auditDoc = auditify.createAuditDocument(originalDocument, {
                     username: 'John Doe',
                     endpoint: 'api/endpoint'
                 }, auditOptions);
@@ -579,7 +568,7 @@ describe('class: AuditableDatabase', function () {
 
 
             it('sets type to audit and populates origin type field', function (done) {
-                var auditDoc = AuditableDatabase.createAuditDocument(originalDocument, null, auditOptions);
+                var auditDoc = auditify.createAuditDocument(originalDocument, null, auditOptions);
                 assert.equal(auditDoc['a_metadata'][auditOptions.originTypeFieldName], 'DocumentType');
                 assert.equal(auditDoc.type, 'audit');
                 done();
@@ -591,7 +580,7 @@ describe('class: AuditableDatabase', function () {
                         field: 'test'
                     }
                 ];
-                var auditDoc = AuditableDatabase.createAuditDocument(originalDocument, null, auditOptions);
+                var auditDoc = auditify.createAuditDocument(originalDocument, null, auditOptions);
                 assert.ok(!auditDoc._attachments);
                 done();
             });
@@ -602,7 +591,7 @@ describe('class: AuditableDatabase', function () {
                         field: 'test'
                     }
                 ];
-                var auditDoc = AuditableDatabase.createAuditDocument(originalDocument, null, auditOptions);
+                var auditDoc = auditify.createAuditDocument(originalDocument, null, auditOptions);
                 assert.equal(
                     JSON.stringify(auditDoc['a_metadata'][auditOptions.attachmentsFieldName]),
                     JSON.stringify(originalDocument._attachments)
@@ -611,7 +600,7 @@ describe('class: AuditableDatabase', function () {
             });
 
             it('modifies type field according options', function (done) {
-                var auditDoc = AuditableDatabase.createAuditDocument(originalDocument, null, auditOptions);
+                var auditDoc = auditify.createAuditDocument(originalDocument, null, auditOptions);
                 assert.equal(auditDoc[auditOptions.typeFieldName], 'audit');
                 done();
             });
@@ -628,7 +617,7 @@ describe('class: AuditableDatabase', function () {
                     originTypeFieldName: 'a_originType',
                     auditType: false
                 };
-                var auditDoc = AuditableDatabase.createAuditDocument(originalDocument,null,  auditOptions);
+                var auditDoc = auditify.createAuditDocument(originalDocument,null,  auditOptions);
                 assert.equal(auditDoc[auditOptions.typeFieldName], 'DocumentType');
                 done();
             });
@@ -646,38 +635,38 @@ describe('class: AuditableDatabase', function () {
                     originTypeFieldName: 'a_originType',
                     auditType: ''
                 };
-                var auditDoc = AuditableDatabase.createAuditDocument(originalDocument, null, auditOptions);
+                var auditDoc = auditify.createAuditDocument(originalDocument, null, auditOptions);
                 assert.equal(auditDoc[auditOptions.typeFieldName], 'DocumentType');
                 done();
             });
 
             it('sets timestamp after field', function (done) {
-                var auditDoc = AuditableDatabase.createAuditDocument(originalDocument, null, auditOptions);
+                var auditDoc = auditify.createAuditDocument(originalDocument, null, auditOptions);
                 assert.ok(!!auditDoc['a_metadata'][auditOptions.timestampAfterFieldName]);
                 done();
             });
 
             it('populates origin id field with original doc _id', function (done) {
-                var auditDoc = AuditableDatabase.createAuditDocument(originalDocument, null, auditOptions);
+                var auditDoc = auditify.createAuditDocument(originalDocument, null, auditOptions);
                 assert.equal(auditDoc['a_metadata'][auditOptions.originIdFieldName], originalDocument._id);
                 done();
             });
 
             it('deletes _id and _rev fields from audit document', function (done) {
-                var auditDoc = AuditableDatabase.createAuditDocument(originalDocument, null, auditOptions);
+                var auditDoc = auditify.createAuditDocument(originalDocument, null, auditOptions);
                 assert.ok(!auditDoc[auditOptions._id]);
                 assert.ok(!auditDoc[auditOptions._rev]);
                 done();
             });
 
             it('preserves existing fields', function (done) {
-                var auditDoc = AuditableDatabase.createAuditDocument(originalDocument, null, auditOptions);
+                var auditDoc = auditify.createAuditDocument(originalDocument, null, auditOptions);
                 assert.equal(auditDoc.someArbitraryField, originalDocument.someArbitraryField);
                 done();
             });
 
             it('sets deleted field if deleted flag set', function (done) {
-                var auditDoc = AuditableDatabase.createAuditDocument(originalDocument, {
+                var auditDoc = auditify.createAuditDocument(originalDocument, {
                     'a_deleted': true
                 }, auditOptions);
 
@@ -712,14 +701,14 @@ describe('class: AuditableDatabase', function () {
             });
 
             it('returns the same number of elements', function (done) {
-                var auditDocs = AuditableDatabase.createAuditDocument(originalDocuments, null, auditOptions);
+                var auditDocs = auditify.createAuditDocument(originalDocuments, null, auditOptions);
 
                 assert.equal(auditDocs.length, 3);
                 done();
             });
 
             it('modifies type field according options', function (done) {
-                var auditDocs = AuditableDatabase.createAuditDocument(originalDocuments, null, auditOptions);
+                var auditDocs = auditify.createAuditDocument(originalDocuments, null, auditOptions);
                 auditDocs.forEach(function (doc) {
                     assert.equal(doc[auditOptions.typeFieldName], 'audit');
                 });
@@ -727,7 +716,7 @@ describe('class: AuditableDatabase', function () {
             });
 
             it('sets timestamp field', function (done) {
-                var auditDocs = AuditableDatabase.createAuditDocument(originalDocuments, null, auditOptions);
+                var auditDocs = auditify.createAuditDocument(originalDocuments, null, auditOptions);
 
                 auditDocs.forEach(function (doc, i) {
                     assert.ok(!!doc['a_metadata'][auditOptions.timestampAfterFieldName]);
@@ -740,7 +729,7 @@ describe('class: AuditableDatabase', function () {
             });
 
             it('populates origin id field with original doc _id', function (done) {
-                var auditDocs = AuditableDatabase.createAuditDocument(originalDocuments, null, auditOptions);
+                var auditDocs = auditify.createAuditDocument(originalDocuments, null, auditOptions);
 
                 auditDocs.forEach(function (doc, i) {
                     assert.equal(doc['a_metadata'][auditOptions.originIdFieldName], originalDocuments[i]._id);
@@ -750,7 +739,7 @@ describe('class: AuditableDatabase', function () {
             });
 
             it('deletes _id and _rev fields from audit document', function (done) {
-                var auditDocs = AuditableDatabase.createAuditDocument(originalDocuments, null, auditOptions);
+                var auditDocs = auditify.createAuditDocument(originalDocuments, null, auditOptions);
 
                 auditDocs.forEach(function (doc) {
                     assert.ok(!doc[auditOptions._id]);
@@ -761,7 +750,7 @@ describe('class: AuditableDatabase', function () {
             });
 
             it('preserves existing fields', function (done) {
-                var auditDocs = AuditableDatabase.createAuditDocument(originalDocuments, null, auditOptions);
+                var auditDocs = auditify.createAuditDocument(originalDocuments, null, auditOptions);
 
                 auditDocs.forEach(function (doc, i) {
                     assert.equal(doc.someArbitraryField, originalDocuments[i].someArbitraryField);
@@ -771,7 +760,7 @@ describe('class: AuditableDatabase', function () {
             });
 
             it('sets deleted fields if deleted flag set', function (done) {
-                var auditDocs = AuditableDatabase.createAuditDocument(originalDocuments, {
+                var auditDocs = auditify.createAuditDocument(originalDocuments, {
                     'a_deleted': true
                 }, auditOptions);
 
