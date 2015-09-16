@@ -5,6 +5,14 @@ Plugin for [cradle](https://github.com/flatiron/cradle) which provides a way mak
 auditable.
 Approach was inspired by [Tugdual Grall's post](http://blog.couchbase.com/how-implement-document-versioning-couchbase).
 
+Features
+------------
+ - supports bulk operations
+ - allows using separate database instance for audit docs
+ - allows to easily implement user activity logging by storing audit metadata on audit docs
+ - inherits Cradle's advantages
+ - good test coverage
+
 How it works
 ------------
 
