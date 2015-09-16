@@ -30,20 +30,20 @@ function auditableSave(doc, auditMetadata, callback) {
     });
 }
 
- function auditableMerge(/* [id], doc, auditMetadata */) {
-     var that = this;
-     var args = Array.prototype.slice.call(arguments),
-         callback = args.pop(),
-         auditMetadata = args.pop(),
-         doc = args.pop(),
-         id = args.pop() || doc._id;
+function auditableMerge(/* [id], doc, auditMetadata */) {
+    var that = this;
+    var args = Array.prototype.slice.call(arguments),
+        callback = args.pop(),
+        auditMetadata = args.pop(),
+        doc = args.pop(),
+        id = args.pop() || doc._id;
 
-     auditMetadata = initializeAuditMetadata(auditMetadata, this.auditOptions);
+    auditMetadata = initializeAuditMetadata(auditMetadata, this.auditOptions);
 
-     this.merge(id, doc, function (err, res) {
-         return that._auditCallbackHandler(err, res, doc, auditMetadata, callback);
-     });
- }
+    this.merge(id, doc, function (err, res) {
+        return that._auditCallbackHandler(err, res, doc, auditMetadata, callback);
+    });
+}
 
 /** Remove doc and save audit copy.
  * Callback is being invoked as soon as remove operation ended.
@@ -144,6 +144,8 @@ function createAuditDocument(doc, auditMetadata, options) {
 
         if (deleted) {
             auditMetadataForDoc[options.deletedFieldName] = deleted;
+        } else {
+            auditMetadataForDoc[options.deletedFieldName] = undefined;
         }
 
         if (audit._attachments) {

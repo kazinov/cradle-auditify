@@ -665,12 +665,12 @@ describe('unit tests', function () {
                 done();
             });
 
-            it('sets deleted field if deleted flag set', function (done) {
+            it('removes deleted field if deleted flag not true on document', function (done) {
                 var auditDoc = auditify.createAuditDocument(originalDocument, {
                     'a_deleted': true
                 }, auditOptions);
 
-                assert.equal(auditDoc['a_metadata'][auditOptions.deletedFieldName], true);
+                assert.equal(auditDoc['a_metadata'][auditOptions.deletedFieldName], undefined);
                 done();
             });
         });
@@ -759,13 +759,13 @@ describe('unit tests', function () {
                 done();
             });
 
-            it('sets deleted fields if deleted flag set', function (done) {
+            it('removes deleted fields if deleted flag not true', function (done) {
                 var auditDocs = auditify.createAuditDocument(originalDocuments, {
                     'a_deleted': true
                 }, auditOptions);
 
                 auditDocs.forEach(function (doc) {
-                    assert.equal(doc['a_metadata'][auditOptions.deletedFieldName], true);
+                    assert.equal(doc['a_metadata'][auditOptions.deletedFieldName], undefined);
                 });
 
                 done();
