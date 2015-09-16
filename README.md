@@ -98,8 +98,7 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
     ```
 
     ### auditableSave() ###
-    A wrapper for original Cradle ```save``` method.
-
+    A wrapper for original Cradle ```save``` method. Allows bulk operations just as original ```save```
 
     ``` js
     db.auditableSave(
@@ -107,7 +106,30 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
     {
         color: 'blue'
     },
-    // Audit matadata object. Will be added as embeded object to audit document. Nullable
+    // Arbitrary audit matadata object. Will be added as embeded object to audit document. Nullable
+    {
+        endpoint: '/api/animals',
+        method: 'POST',
+        userId: 4234
+    },
+    function (err, res) {
+    // Handle response
+    });
+    ```
+    
+        ### auditableMerge() ###
+    A wrapper for original Cradle ```merge``` method.
+
+
+    ``` js
+    db.auditableMerge(
+    // id of the document
+    'sdf34523452sdfsafasdf23f',
+    // document to merge
+    {
+        color: 'orange'
+    },
+    // Arbitrary audit matadata object. Will be added as embeded object to audit document. Nullable
     {
         endpoint: '/api/animals',
         method: 'POST',
