@@ -83,3 +83,37 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
           "deleted": true
       }
    ```
+
+   API
+   ---
+### Extending Cradle database ###
+
+    ``` js
+    var cradle = require('cradle');
+    var cradleAuditify = require('cradle-auditify');
+
+    var connection = new (cradle.Connection)('127.0.0.1', 5984, { cache: false });
+    var db = connection.database('monkeys');
+    db = cradleAuditify(db);
+    ```
+
+### auditableSave() ###
+A wrapper for original Cradle ```save``` method.
+
+    ``` js
+    db.auditableSave(
+    // New document to create/update
+    {
+        color: 'blue'
+    },
+    // Audit matadata object. Contains arbitrary data which can be usefull for audit. Nullable
+    {
+        endpoint: '/api/animals',
+        method: 'POST',
+        userId: 4234
+    },
+    function (err, res) {
+           // Handle response
+    });
+
+    ```
