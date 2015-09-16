@@ -199,6 +199,70 @@ describe('integration tests', function() {
 
                 db.auditEvents.on('error', done);
             });
+
+            it('saves audit documents on editing', function (done) {
+                var newPig1 = {
+                    color: 'blue'
+                }, newPig2 = {
+                    color: 'grey'
+                };
+                var newPigs = [newPig1, newPig2];
+
+                var auditMetadata = {
+                    usefulMetadata: 'test'
+                };
+                var newPig1Id, newPig2Id, archivedEventCount = 0;
+
+                // bulk creation
+                db.auditableSave(newPigs, auditMetadata, function (err, res) {
+                    if (err) {
+                        done(err);
+                    }
+                    newPig1Id = res[0].id;
+                    newPig2Id = res[1].id;
+
+                    newPig1._id = res[0].id;
+                    newPig1._rev = res[0].rev;
+                    newPig1.color = 'red';
+
+                    newPig2._id = res[1].id;
+                    newPig2._rev = res[1].rev;
+                    newPig2.color = 'orange';
+
+                    // bulk edit
+                    db.auditableSave(newPigs, auditMetadata, function (err) {
+                        if (err) {
+                            done(err);
+                        }
+                    });
+                });
+
+
+                db.auditEvents.on('archived', function () {
+                    archivedEventCount++;
+                    if (archivedEventCount === 1) {
+                        return;
+                    }
+
+                    async.parallel([
+                            function (callback) {
+                                checkAuditDocOnEditing(db, newPig1Id, 'blue', 'red', callback);
+                            },
+                            function (callback) {
+                                checkAuditDocOnEditing(db, newPig2Id, 'grey', 'orange', callback);
+                            }
+                        ],
+                        function (err) {
+                            if (err) {
+                                done(err);
+                            }
+                            done();
+                        });
+                });
+
+
+                db.auditEvents.on('error', done);
+            });
         });
     });
 });
