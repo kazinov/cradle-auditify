@@ -1,6 +1,19 @@
 {
   "name": "cradle-auditify",
-  "version": "0.0.1",
+  "description": "Cradle plugin for simple document versioning",
+  "keywords": [
+    "couchdb",
+    "database",
+    "couch",
+    "versioning",
+    "audit"
+  ],
+  "author": {
+    "name": "Dmitriy Kazinov",
+    "email": "dm.kazinov@gmail.com"
+  },
+  "main": "./src/cradleAuditify",
+  "version": "0.1.0",
   "dependencies": {
     "cradle": "^0.6.9",
     "lodash": "^3.10.1"
@@ -13,5 +26,11 @@
     "grunt-simple-mocha": "^0.4.0",
     "request": "^2.62.0",
     "sinon": "^1.16.1"
+  },
+  "scripts": {
+    "test": "node test/helpers/seed.js && grunt validate"
+  },
+  "engines": {
+    "node": ">=0.8.0"
   }
 }

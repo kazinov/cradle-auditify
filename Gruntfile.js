@@ -35,4 +35,6 @@ module.exports = function(grunt) {
             }
         }
     });
+
+    grunt.registerTask('validate', ['jshint', 'simplemocha']);
 };
