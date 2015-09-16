@@ -137,7 +137,6 @@ API
  
  A wrapper for original Cradle ```merge``` method.
 
-
  ``` js
  db.auditableMerge(
  // id of the document
@@ -146,6 +145,94 @@ API
  {
      color: 'orange'
  },
+ // Arbitrary audit matadata object. Will be added as embeded object to audit document. Nullable
+ {
+     endpoint: '/api/animals',
+     method: 'POST',
+     userId: 4234
+ },
+ function (err, res) {
+ // Handle response
+ });
+ ```
+ 
+ ### auditablePut() ###
+ 
+ A wrapper for original Cradle ```put``` method.
+
+ ``` js
+ db.auditablePut(
+ // id of the document
+ 'sdf34523452sdfsafasdf23f',
+ // document to put
+ {
+     color: 'orange'
+ },
+ // Arbitrary audit matadata object. Will be added as embeded object to audit document. Nullable
+ {
+     endpoint: '/api/animals',
+     method: 'POST',
+     userId: 4234
+ },
+ function (err, res) {
+ // Handle response
+ });
+ ```
+ 
+ ### auditablePost() ###
+ 
+ A wrapper for original Cradle ```post``` method.
+
+ ``` js
+ db.auditablePost(
+ // document to post
+ {
+     color: 'orange'
+ },
+ // Arbitrary audit matadata object. Will be added as embeded object to audit document. Nullable
+ {
+     endpoint: '/api/animals',
+     method: 'POST',
+     userId: 4234
+ },
+ function (err, res) {
+ // Handle response
+ });
+ ```
+ 
+ ### auditablePut() ###
+ 
+ A wrapper for original Cradle ```put``` method.
+
+ ``` js
+ db.auditablePut(
+ // id of the document
+ 'sdf34523452sdfsafasdf23f',
+ // document to put
+ {
+     color: 'orange'
+ },
+ // Arbitrary audit matadata object. Will be added as embeded object to audit document. Nullable
+ {
+     endpoint: '/api/animals',
+     method: 'POST',
+     userId: 4234
+ },
+ function (err, res) {
+ // Handle response
+ });
+ ```
+ 
+ ### auditableRemove() ###
+ 
+ A wrapper for original Cradle ```remove``` method.
+
+ ``` js
+ db.auditableRemove(
+ // id of the document
+ 'sdf34523452sdfsafasdf23f',
+ // rev of the document
+ '1-sdf34523452sdfsafasdf23f',
  // Arbitrary audit matadata object. Will be added as embeded object to audit document. Nullable
  {
      endpoint: '/api/animals',
