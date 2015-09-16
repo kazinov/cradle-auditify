@@ -419,11 +419,10 @@ describe('integration tests', function() {
                 newDocRev = res.rev;
 
                 // delete
-                db.auditableRemove(newDocId, newDocRev, auditMetadata, function (err, res) {
+                db.auditableRemove(newDocId, newDocRev, auditMetadata, function (err) {
                     if (err) {
                         done(err);
                     }
-                    console.log('REMOVE RES: ' + JSON.stringify(res));
                 });
             });
 
@@ -433,6 +432,42 @@ describe('integration tests', function() {
                 }
 
                 checkAuditDocOnDeleting(db, newDocId, done);
+            });
+            db.auditEvents.on('error', done);
+        });
+    });
+
+    describe('method auditableMerge()', function () {
+        it('saves audit document', function (done) {
+            var newDoc = {
+                color: 'blue'
+            };
+            var auditMetadata = {
+                usefulMetadata: 'test'
+            };
+            var newDocId, archivedEventCount = 0;
+
+            //creation
+            db.auditableSave(newDoc, auditMetadata, function (err, res) {
+                if (err) {
+                    done(err);
+                }
+                newDocId = res.id;
+
+                // merge
+                db.auditableMerge(newDocId, { color: 'pinky'}, auditMetadata, function (err) {
+                    if (err) {
+                        done(err);
+                    }
+                });
+            });
+
+            db.auditEvents.on('archived', function () {
+                if (++archivedEventCount && archivedEventCount === 1) {
+                    return;
+                }
+
+                checkAuditDocOnEditing(db, newDocId, 'blue', 'pinky', done);
             });
             db.auditEvents.on('error', done);
         });

@@ -20,7 +20,7 @@ var defaultOptions = {
  * Callback is being invoked as soon as save operation ended.
  * Audit copies saving goes on in background
  * @param {object} doc Document to be saved
- * @param {object} auditMetadata document to be embeded to audit copy, optional */
+ * @param {object} auditMetadata document to be embeded to audit copy, nullable */
 function auditableSave(doc, auditMetadata, callback) {
     var that = this;
     auditMetadata = initializeAuditMetadata(auditMetadata, this.auditOptions);
@@ -30,12 +30,27 @@ function auditableSave(doc, auditMetadata, callback) {
     });
 }
 
+ function auditableMerge(/* [id], doc, auditMetadata */) {
+     var that = this;
+     var args = Array.prototype.slice.call(arguments),
+         callback = args.pop(),
+         auditMetadata = args.pop(),
+         doc = args.pop(),
+         id = args.pop() || doc._id;
+
+     auditMetadata = initializeAuditMetadata(auditMetadata, this.auditOptions);
+
+     this.merge(id, doc, function (err, res) {
+         return that._auditCallbackHandler(err, res, doc, auditMetadata, callback);
+     });
+ }
+
 /** Remove doc and save audit copy.
  * Callback is being invoked as soon as remove operation ended.
  * Audit copies saving goes on in background.
  * @param {string} id _id field of deleting document
  * @param {string} rev _rev field of deleting document
- * @param {object} auditMetadata document to be embeded to audit copy, optional */
+ * @param {object} auditMetadata document to be embeded to audit copy, nullable */
 function auditableRemove(id, rev, auditMetadata, callback) {
     var that = this;
     auditMetadata = initializeAuditMetadata(auditMetadata, this.auditOptions);
@@ -163,6 +178,7 @@ module.exports = function (db, options) {
 
     db.auditEvents = new events.EventEmitter();
     db.auditableSave = auditableSave;
+    db.auditableMerge = auditableMerge;
     db.auditableRemove = auditableRemove;
     db._archive = _archive;
     db._onArchived = _onArchived;
