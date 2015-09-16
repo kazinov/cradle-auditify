@@ -5,14 +5,14 @@ var _ = require('lodash'),
  *  @default
  */
 var defaultOptions = {
-    originIdFieldName: 'a_originId',
-    timestampBeforeFieldName: 'a_timestampBefore',
-    timestampAfterFieldName: 'a_timestampAfter',
-    deletedFieldName: 'a_deleted',
-    attachmentsFieldName: 'a_attachments',
+    originIdFieldName: 'originId',
+    timestampBeforeFieldName: 'timestampBefore',
+    timestampAfterFieldName: 'timestampAfter',
+    deletedFieldName: 'deleted',
+    attachmentsFieldName: 'attachments',
     auditMetadataFieldName: 'a_metadata',
     typeFieldName: 'type',
-    originTypeFieldName: 'a_originType',
+    originTypeFieldName: 'originType',
     auditType: 'audit'
 };
 

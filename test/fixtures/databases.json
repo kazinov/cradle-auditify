@@ -13,7 +13,7 @@
           "map": "function (doc) { if (doc.color) emit(doc._id, doc) }"
         },
         "auditDocsByOriginId": {
-          "map": "function (doc) { if (doc.type === 'audit' && doc['a_metadata']['a_originId']) emit(doc['a_metadata']['a_originId'], doc) }"
+          "map": "function (doc) { if (doc.type === 'audit' && doc['a_metadata']['originId']) emit(doc['a_metadata']['originId'], doc) }"
         }
       },
       "updates": {

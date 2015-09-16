@@ -4,10 +4,10 @@ var cradleAuditify = require('../src/cradleAuditify');
 var cradle = require('cradle');
 
 var METADATA_FIELD = 'a_metadata';
-var ORIGINID_FIELD = 'a_originId';
-var DELETED_FIELD = 'a_deleted';
-var TIMESTAMP_BEFORE_FIELD = 'a_timestampBefore';
-var TIMESTAMP_AFTER_FIELD = 'a_timestampAfter';
+var ORIGINID_FIELD = 'originId';
+var DELETED_FIELD = 'deleted';
+var TIMESTAMP_BEFORE_FIELD = 'timestampBefore';
+var TIMESTAMP_AFTER_FIELD = 'timestampAfter';
 var GET_AUDIT_DOCS_VIEW_NAME = 'pigs/auditDocsByOriginId';
 
 function checkAuditDoc(auditDoc, auditMetadata, originId, deleted) {

@@ -33,14 +33,14 @@ describe('unit tests', function () {
 
     beforeEach(function () {
         auditOptions = {
-            originIdFieldName: 'a_originId',
-            timestampBeforeFieldName: 'a_timestampBefore',
-            timestampAfterFieldName: 'a_timestampAfter',
-            deletedFieldName: 'a_deleted',
-            attachmentsFieldName: 'a_attachments',
+            originIdFieldName: 'originId',
+            timestampBeforeFieldName: 'timestampBefore',
+            timestampAfterFieldName: 'timestampAfter',
+            deletedFieldName: 'deleted',
+            attachmentsFieldName: 'attachments',
             auditMetadataFieldName: 'a_metadata',
             typeFieldName: 'type',
-            originTypeFieldName: 'a_originType',
+            originTypeFieldName: 'originType',
             auditType: 'audit'
         };
     });
@@ -64,17 +64,17 @@ describe('unit tests', function () {
                 originIdFieldName: 'originIdFieldName_test'
             });
             assert.equal(auditableDatabase.auditOptions.originIdFieldName, 'originIdFieldName_test');
-            assert.equal(auditableDatabase.auditOptions.timestampBeforeFieldName, 'a_timestampBefore');
-            assert.equal(auditableDatabase.auditOptions.deletedFieldName, 'a_deleted');
+            assert.equal(auditableDatabase.auditOptions.timestampBeforeFieldName, 'timestampBefore');
+            assert.equal(auditableDatabase.auditOptions.deletedFieldName, 'deleted');
             done();
         });
 
         it('sets default audit options when options param is not defined', function (done) {
             auditableDatabase = auditify({});
 
-            assert.equal(auditableDatabase.auditOptions.originIdFieldName, 'a_originId');
-            assert.equal(auditableDatabase.auditOptions.timestampBeforeFieldName, 'a_timestampBefore');
-            assert.equal(auditableDatabase.auditOptions.deletedFieldName, 'a_deleted');
+            assert.equal(auditableDatabase.auditOptions.originIdFieldName, 'originId');
+            assert.equal(auditableDatabase.auditOptions.timestampBeforeFieldName, 'timestampBefore');
+            assert.equal(auditableDatabase.auditOptions.deletedFieldName, 'deleted');
             done();
         });
     });
@@ -125,10 +125,10 @@ describe('unit tests', function () {
                     username: 'John Doe'
                 }, function () {
                     assert.ok(saveSpy.called);
-                    assert.equal(saveSpy.getCall(0).args[0]['a_metadata']['a_originId'], 'some_unique_id');
-                    assert.equal(saveSpy.getCall(0).args[0]['a_metadata']['a_deleted'], true);
-                    assert.ok(!!saveSpy.getCall(0).args[0]['a_metadata']['a_timestampBefore']);
-                    assert.ok(!!saveSpy.getCall(0).args[0]['a_metadata']['a_timestampAfter']);
+                    assert.equal(saveSpy.getCall(0).args[0]['a_metadata']['originId'], 'some_unique_id');
+                    assert.equal(saveSpy.getCall(0).args[0]['a_metadata']['deleted'], true);
+                    assert.ok(!!saveSpy.getCall(0).args[0]['a_metadata']['timestampBefore']);
+                    assert.ok(!!saveSpy.getCall(0).args[0]['a_metadata']['timestampAfter']);
                     assert.equal(saveSpy.getCall(0).args[0]['a_metadata'].username, 'John Doe');
                     done();
                 });
@@ -607,14 +607,14 @@ describe('unit tests', function () {
 
             it('doesnt modify type field if options.auditType == false', function (done) {
                 var auditOptions = {
-                    originIdFieldName: 'a_originId',
-                    timestampBeforeFieldName: 'a_timestampBefore',
-                    timestampAfterFieldName: 'a_timestampAfter',
-                    deletedFieldName: 'a_deleted',
-                    attachmentsFieldName: 'a_attachments',
+                    originIdFieldName: 'originId',
+                    timestampBeforeFieldName: 'timestampBefore',
+                    timestampAfterFieldName: 'timestampAfter',
+                    deletedFieldName: 'deleted',
+                    attachmentsFieldName: 'attachments',
                     auditMetadataFieldName: 'a_metadata',
                     typeFieldName: 'type',
-                    originTypeFieldName: 'a_originType',
+                    originTypeFieldName: 'originType',
                     auditType: false
                 };
                 var auditDoc = auditify.createAuditDocument(originalDocument,null,  auditOptions);
@@ -625,14 +625,14 @@ describe('unit tests', function () {
             it('doesnt modify type field if options.auditType is an empty string', function (done) {
 
                 var auditOptions = {
-                    originIdFieldName: 'a_originId',
-                    timestampBeforeFieldName: 'a_timestampBefore',
-                    timestampAfterFieldName: 'a_timestampAfter',
-                    deletedFieldName: 'a_deleted',
-                    attachmentsFieldName: 'a_attachments',
+                    originIdFieldName: 'originId',
+                    timestampBeforeFieldName: 'timestampBefore',
+                    timestampAfterFieldName: 'timestampAfter',
+                    deletedFieldName: 'deleted',
+                    attachmentsFieldName: 'attachments',
                     auditMetadataFieldName: 'a_metadata',
                     typeFieldName: 'type',
-                    originTypeFieldName: 'a_originType',
+                    originTypeFieldName: 'originType',
                     auditType: ''
                 };
                 var auditDoc = auditify.createAuditDocument(originalDocument, null, auditOptions);
@@ -667,7 +667,7 @@ describe('unit tests', function () {
 
             it('removes deleted field if deleted flag not true on document', function (done) {
                 var auditDoc = auditify.createAuditDocument(originalDocument, {
-                    'a_deleted': true
+                    'deleted': true
                 }, auditOptions);
 
                 assert.equal(auditDoc['a_metadata'][auditOptions.deletedFieldName], undefined);
@@ -761,7 +761,7 @@ describe('unit tests', function () {
 
             it('removes deleted fields if deleted flag not true', function (done) {
                 var auditDocs = auditify.createAuditDocument(originalDocuments, {
-                    'a_deleted': true
+                    'deleted': true
                 }, auditOptions);
 
                 auditDocs.forEach(function (doc) {
