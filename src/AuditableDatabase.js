@@ -60,8 +60,8 @@ AuditableDatabase.prototype.auditableSave = function (doc, auditMetadata, callba
             return callback(err);
         }
 
-        var auditDoc = AuditableDatabase.mergeSaveResultToDoc(doc, res);
-        that._archive(auditDoc, auditMetadata);
+        var docToArchive = AuditableDatabase.mergeSaveResultToDoc(doc, res);
+        that._archive(docToArchive, auditMetadata);
 
         return callback(null, res);
     });
@@ -77,19 +77,19 @@ AuditableDatabase.prototype.auditableRemove = function (id, rev, auditMetadata, 
     var that = this;
     auditMetadata = auditMetadata || {};
 
-    var auditDoc = {
+    var docToArchive = {
         _id: id,
-        _rev: rev
+        _rev: rev,
+        _deleted: true
     };
     auditMetadata[this.auditOptions.timestampBeforeFieldName] = new Date().toISOString();
-    auditMetadata[this.auditOptions.deletedFieldName] = true;
 
     that.remove(id, rev, function (err, res) {
         if (err) {
             return callback(err);
         }
 
-        that._archive(auditDoc, auditMetadata);
+        that._archive(docToArchive, auditMetadata);
         return callback(null, res);
     });
 };
@@ -122,7 +122,6 @@ AuditableDatabase.mergeSaveResultToDoc = function (doc, saveResult) {
 
 AuditableDatabase.createAuditDocument = function (doc, auditMetadata, options) {
     auditMetadata = auditMetadata || {};
-    var deleteOperation = auditMetadata[options.deletedFieldName] || false;
     auditMetadata[options.timestampAfterFieldName] = new Date().toISOString();
 
     if (Array.isArray(doc)) {
@@ -135,23 +134,18 @@ AuditableDatabase.createAuditDocument = function (doc, auditMetadata, options) {
 
     function transform(doc) {
         var audit,
-            auditMetadataForDoc = _.assign({}, auditMetadata);
+            auditMetadataForDoc = _.assign({}, auditMetadata),
+            deleted = doc._deleted || false;
 
-        if(doc._deleted) {
-            // CouchDb provides a way to do bulk update by setting _deleted to true on bulk operation
-            // https://wiki.apache.org/couchdb/HTTP_Bulk_Document_API
-            deleteOperation = true;
-        }
-
-        if (deleteOperation) {
+        if (deleted) {
             // don't copy fields on deleted document audit.
             audit = {};
         } else {
             audit = _.assign({}, doc);
         }
 
-        if (deleteOperation) {
-            auditMetadataForDoc[options.deletedFieldName] = deleteOperation;
+        if (deleted) {
+            auditMetadataForDoc[options.deletedFieldName] = deleted;
         }
 
         if (audit._attachments) {
@@ -175,5 +169,3 @@ AuditableDatabase.createAuditDocument = function (doc, auditMetadata, options) {
 };
 
 module.exports = AuditableDatabase;
-
-
