@@ -9,7 +9,12 @@
     {
       "_id": "_design/pigs",
       "views": {
-        "all": { "map": "function (doc) { if (doc.color) emit(doc._id, doc) }" }
+        "all": {
+          "map": "function (doc) { if (doc.color) emit(doc._id, doc) }"
+        },
+        "auditDocsByOriginId": {
+          "map": "function (doc) { if (doc.type === 'audit' && doc['a_metadata']['a_originId']) emit(doc['a_metadata']['a_originId'], doc) }"
+        }
       },
       "updates": {
         "newVersion": "function(doc, req) { doc.foo = JSON.parse(req.body).foo; return [doc, JSON.stringify(doc)]; }"
@@ -39,7 +44,9 @@
     {
       "_id": "_design/pigs",
       "views": {
-        "all": { "map": "function (doc) { if (doc.color) emit(doc._id, doc) }" }
+        "all": {
+          "map": "function (doc) { if (doc.color) emit(doc._id, doc) }"
+        }
       }
     },
     {

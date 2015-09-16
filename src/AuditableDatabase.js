@@ -150,7 +150,9 @@ AuditableDatabase.createAuditDocument = function (doc, auditMetadata, options) {
             audit = _.assign({}, doc);
         }
 
-        auditMetadataForDoc[options.deletedFieldName] = deleteOperation;
+        if (deleteOperation) {
+            auditMetadataForDoc[options.deletedFieldName] = deleteOperation;
+        }
 
         if (audit._attachments) {
             // current solution is not to store attached documents with
