@@ -472,4 +472,43 @@ describe('integration tests', function() {
             db.auditEvents.on('error', done);
         });
     });
+
+    describe('method auditablePut()', function () {
+        it('saves audit document', function (done) {
+            var newDoc = {
+                color: 'blue'
+            };
+            var auditMetadata = {
+                usefulMetadata: 'test'
+            };
+            var newDocId, archivedEventCount = 0;
+
+            //creation
+            db.auditableSave(newDoc, auditMetadata, function (err, res) {
+                if (err) {
+                    done(err);
+                }
+                newDocId = res.id;
+                newDoc._id = res.id;
+                newDoc._rev = res.rev;
+                newDoc.color = 'black';
+
+                // merge
+                db.auditablePut(newDocId, newDoc, auditMetadata, function (err) {
+                    if (err) {
+                        done(err);
+                    }
+                });
+            });
+
+            db.auditEvents.on('archived', function () {
+                if (++archivedEventCount && archivedEventCount === 1) {
+                    return;
+                }
+
+                checkAuditDocOnEditing(db, newDocId, 'blue', 'black', done);
+            });
+            db.auditEvents.on('error', done);
+        });
+    });
 });
