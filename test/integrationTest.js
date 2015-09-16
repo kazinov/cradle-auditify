@@ -72,7 +72,6 @@ function checkAuditDocOnEditing(db, newPigId, createColor, editColor, callback) 
 
         var auditDocFromCreationStep = auditDocs[0];
         var auditDocFromEditingStep = auditDocs[1];
-        console.log(JSON.stringify(auditDocFromEditingStep));
         assert.equal(auditDocFromCreationStep.color, createColor);
         assert.equal(auditDocFromEditingStep.color, editColor);
         checkAuditDocs(
@@ -364,7 +363,6 @@ describe('integration tests', function() {
                     newPig2._rev = res[1].rev;
                     newPig2.color = 'orange';
 
-                    console.log('SECOND SAVE: ' + JSON.stringify(newPigs));
                     // bulk edit
                     db.auditableSave(newPigs, auditMetadata, function (err) {
                         if (err) {
@@ -398,6 +396,43 @@ describe('integration tests', function() {
 
                 db.auditEvents.on('error', done);
             });
+        });
+    });
+
+    describe('method auditableRemove()', function () {
+        it('saves audit document', function (done) {
+            var newPig = {
+                color: 'blue'
+            };
+            var auditMetadata = {
+                usefulMetadata: 'test'
+            };
+            var newPigId, newPigRev, archivedEventCount = 0;
+
+            //creation
+            db.auditableSave(newPig, auditMetadata, function (err, res) {
+                if (err) {
+                    done(err);
+                }
+                newPigId = res.id;
+                newPigRev = res.rev;
+
+                // delete
+                db.auditableRemove(newPigId, newPigRev, auditMetadata, function (err) {
+                    if (err) {
+                        done(err);
+                    }
+                });
+            });
+
+            db.auditEvents.on('archived', function () {
+                if (++archivedEventCount && archivedEventCount === 1) {
+                    return;
+                }
+
+                checkAuditDocOnDeleting(db, newPigId, done);
+            });
+            db.auditEvents.on('error', done);
         });
     });
 });
