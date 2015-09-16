@@ -34,14 +34,17 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
  So a new document will be saved into database:
 
  ```
+ {
     _id: "936caf5e007ee3570e50d7ab3b36b1df",
     _rev: "1-fcc4a130df1a91f981a80bed05e5d2ab",
     color: "black"
+ }
  ```
 
  And also **new audit document will be created in the database**:
 
  ```
+ {
     _id: "345ewghyy45007ee3570e50d7ab3b36c19f"
     _rev: "1-de8785f14dc07a79834771143fa0d908",
     color: 'black'
@@ -50,15 +53,18 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
         "timestampAfter": "2015-09-16T13:31:12.257Z",
         "originId": "936caf5e007ee3570e50d7ab3b36b1df"
     }
+ }
  ```
 
  Then we call ```database.auditablePut``` with changed color property:
 
-  ```
-     _id: "936caf5e007ee3570e50d7ab3b36b1df",
-     _rev: "1-fcc4a130df1a91f981a80bed05e5d2ab",
-     color: "red"
-  ```
+ ```
+ {
+    _id: "936caf5e007ee3570e50d7ab3b36b1df",
+    _rev: "1-fcc4a130df1a91f981a80bed05e5d2ab",
+    color: "red"
+ }
+ ```
 
   This document will be updated as usual and also **new audit document will be created in the database**:
 
