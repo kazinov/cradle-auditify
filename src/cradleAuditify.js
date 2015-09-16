@@ -164,7 +164,8 @@ function createAuditDocument(doc, auditMetadata, options) {
         }
 
         auditMetadataForDoc[options.originIdFieldName] = doc._id;
-        if (options.auditType) {
+
+        if (options.auditType && options.typeFieldName && options.originTypeFieldName) {
             auditMetadataForDoc[options.originTypeFieldName] = audit[options.typeFieldName];
             audit[options.typeFieldName] = options.auditType;
         }
