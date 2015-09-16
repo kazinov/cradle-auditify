@@ -17,11 +17,6 @@ var defaultOptions = {
     database: null
 };
 
-/** Save doc or array of docs and audit copies.
- * Callback is being invoked as soon as save operation ended.
- * Audit copies saving goes on in background
- * @param {object} doc Document to be saved
- * @param {object} auditMetadata document to be embeded to audit copy, nullable */
 function auditableSave(doc, auditMetadata, callback) {
     var that = this;
     auditMetadata = initializeAuditMetadata(auditMetadata, this.auditOptions);
@@ -64,12 +59,6 @@ function auditablePost(doc, auditMetadata, callback) {
     });
 }
 
-/** Remove doc and save audit copy.
- * Callback is being invoked as soon as remove operation ended.
- * Audit copies saving goes on in background.
- * @param {string} id _id field of deleting document
- * @param {string} rev _rev field of deleting document
- * @param {object} auditMetadata document to be embeded to audit copy, nullable */
 function auditableRemove(id, rev, auditMetadata, callback) {
     var that = this;
     auditMetadata = initializeAuditMetadata(auditMetadata, this.auditOptions);
@@ -188,7 +177,8 @@ function createAuditDocument(doc, auditMetadata, options) {
 }
 
 /**
- * extends cradle database instance with auditableSave, auditableRemove methods.
+ * extends cradle database instance with
+ * auditableSave, auditableRemove, auditablePut, auditablePost, auditableMerge methods.
  *  @param db @see cradle.Database instance to extend
  *  @param {object} options Audit options object. For @default @see defaultOptions
  */
@@ -198,12 +188,49 @@ module.exports = function (db, options) {
     _.assign(db.auditOptions, options);
     db.auditOptions.database = db.auditOptions.database || db;
 
+    /**
+     * Emits archived and error events
+     * @type {events.EventEmitter}
+     */
     db.auditEvents = new events.EventEmitter();
 
+    /**
+     * @param {object | array of objects} doc Document to be saved
+     * @param {object} auditMetadata document to be embeded to audit copy, nullable
+     * @param {function} callback
+     * */
     db.auditableSave = auditableSave;
+
+    /**
+     *  @param {string} id
+     * @param {string} rev
+     * @param {object} auditMetadata document to be embeded to audit copy, nullable
+     * @param {function} callback
+     * */
     db.auditablePut = auditablePut;
+
+    /**
+     * @param {object} doc Document to be posted
+     * @param {object} auditMetadata document to be embeded to audit copy, nullable
+     * @param {function} callback
+     * */
     db.auditablePost = auditablePost;
+
+    /**
+     *  @param {string} id, optional
+     * @param {object} doc, doc to be merged
+     * @param {object} auditMetadata document to be embeded to audit copy, nullable
+     * @param {function} callback
+     * */
     db.auditableMerge = auditableMerge;
+
+
+    /**
+     * @param {string} id _id field of deleting document
+     * @param {string} rev _rev field of deleting document
+     * @param {object} auditMetadata document to be embeded to audit copy, nullable
+     * @param {function} callback
+     * */
     db.auditableRemove = auditableRemove;
 
     db._archive = _archive;
