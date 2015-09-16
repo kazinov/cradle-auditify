@@ -117,7 +117,7 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
     });
     ```
     
-        ### auditableMerge() ###
+    ### auditableMerge() ###
     A wrapper for original Cradle ```merge``` method.
 
 
