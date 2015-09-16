@@ -100,14 +100,15 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
     ### auditableSave() ###
     A wrapper for original Cradle ```save``` method.
 
-    
+
         ``` js
+        
         db.auditableSave(
         // New document to create/update
         {
             color: 'blue'
         },
-        // Audit matadata object. Contains arbitrary data which can be usefull for audit. Nullable
+        // Audit matadata object. Will be added as embeded object to audit document. Nullable
         {
             endpoint: '/api/animals',
             method: 'POST',
