@@ -134,6 +134,22 @@ API
     database: auditDb
  });
  ```
+ 
+ ### auditEvents ###
+
+ Node.js event emitter instance. Provides two types of events: 'archived' and 'error'
+ 
+ ``` js
+ var db = connection.database('monkeys');
+ db = cradleAuditify(db);
+ 
+ db.auditEvents.on('archived', function (res) {
+     console.log('Audit document with _id ' + res.id + ' created');
+ });
+ db.auditEvents.on('error', function (err) {
+     console.error(err);
+ });
+ ```
 
 ### auditableSave() ###
  
