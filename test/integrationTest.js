@@ -40,8 +40,8 @@ function checkAuditDocs(auditDocs, auditMetadata, originId) {
     });
 }
 
-function checkAuditDocOnCreation(db, newPigId, callback) {
-    db.view(GET_AUDIT_DOCS_VIEW_NAME, { key: newPigId }, function (err, res) {
+function checkAuditDocOnCreation(db, newDocId, callback) {
+    db.view(GET_AUDIT_DOCS_VIEW_NAME, { key: newDocId }, function (err, res) {
         if (err) {
             callback(err);
         }
@@ -53,13 +53,13 @@ function checkAuditDocOnCreation(db, newPigId, callback) {
             {
                 usefulMetadata: 'test'
             },
-            newPigId);
+            newDocId);
         callback();
     });
 }
 
-function checkAuditDocOnEditing(db, newPigId, createColor, editColor, callback) {
-    db.view(GET_AUDIT_DOCS_VIEW_NAME, { key: newPigId }, function (err, res) {
+function checkAuditDocOnEditing(db, newDocId, createColor, editColor, callback) {
+    db.view(GET_AUDIT_DOCS_VIEW_NAME, { key: newDocId }, function (err, res) {
         if (err) {
             callback(err);
         }
@@ -79,13 +79,13 @@ function checkAuditDocOnEditing(db, newPigId, createColor, editColor, callback) 
             {
                 usefulMetadata: 'test'
             },
-            newPigId);
+            newDocId);
         callback();
     });
 }
 
-function checkAuditDocOnDeleting(db, newPigId,  callback) {
-    db.view(GET_AUDIT_DOCS_VIEW_NAME, { key: newPigId }, function (err, res) {
+function checkAuditDocOnDeleting(db, newDocId,  callback) {
+    db.view(GET_AUDIT_DOCS_VIEW_NAME, { key: newDocId }, function (err, res) {
         if (err) {
             callback(err);
         }
@@ -104,14 +104,14 @@ function checkAuditDocOnDeleting(db, newPigId,  callback) {
             {
                 usefulMetadata: 'test'
             },
-            newPigId);
+            newDocId);
 
         checkAuditDoc(
             auditDocFromDeletingStep,
             {
                 usefulMetadata: 'test'
             },
-            newPigId,
+            newDocId,
             true
         );
         callback();
@@ -128,49 +128,49 @@ describe('integration tests', function() {
     describe('method auditableSave()', function () {
         describe('when called with single document', function () {
             it('saves audit document on creation', function (done) {
-                var newPig = {
+                var newDoc = {
                     color: 'blue'
                 };
                 var auditMetadata = {
                     usefulMetadata: 'test'
                 };
-                var newPigId;
+                var newDocId;
 
-                db.auditableSave(newPig, auditMetadata, function (err, res) {
+                db.auditableSave(newDoc, auditMetadata, function (err, res) {
                     if (err) {
                         done(err);
                     }
-                    newPigId = res.id;
+                    newDocId = res.id;
                 });
 
                 db.auditEvents.on('archived', function () {
-                    checkAuditDocOnCreation(db, newPigId, done);
+                    checkAuditDocOnCreation(db, newDocId, done);
                 });
                 db.auditEvents.on('error', done);
             });
 
             it('saves audit document on editing', function (done) {
-                var newPig = {
+                var newDoc = {
                     color: 'blue'
                 };
                 var auditMetadata = {
                     usefulMetadata: 'test'
                 };
-                var newPigId, archivedEventCount = 0;
+                var newDocId, archivedEventCount = 0;
 
                 // create
-                db.auditableSave(newPig, auditMetadata, function (err, res) {
+                db.auditableSave(newDoc, auditMetadata, function (err, res) {
                     if (err) {
                         done(err);
                     }
-                    newPigId = res.id;
+                    newDocId = res.id;
 
-                    newPig._id = res.id;
-                    newPig._rev = res.rev;
-                    newPig.color = 'red';
+                    newDoc._id = res.id;
+                    newDoc._rev = res.rev;
+                    newDoc.color = 'red';
 
                     // edit
-                    db.auditableSave(newPig, auditMetadata, function (err) {
+                    db.auditableSave(newDoc, auditMetadata, function (err) {
                         if (err) {
                             done(err);
                         }
@@ -181,34 +181,34 @@ describe('integration tests', function() {
                     if (++archivedEventCount && archivedEventCount === 1) {
                         return;
                     }
-                    checkAuditDocOnEditing(db, newPigId, 'blue', 'red', done);
+                    checkAuditDocOnEditing(db, newDocId, 'blue', 'red', done);
 
                 });
                 db.auditEvents.on('error', done);
             });
 
             it('saves audit document with deleted flag when _deleted=true', function (done) {
-                var newPig = {
+                var newDoc = {
                     color: 'blue'
                 };
                 var auditMetadata = {
                     usefulMetadata: 'test'
                 };
-                var newPigId, archivedEventCount = 0;
+                var newDocId, archivedEventCount = 0;
 
                 // create
-                db.auditableSave(newPig, auditMetadata, function (err, res) {
+                db.auditableSave(newDoc, auditMetadata, function (err, res) {
                     if (err) {
                         done(err);
                     }
-                    newPigId = res.id;
+                    newDocId = res.id;
 
-                    newPig._id = res.id;
-                    newPig._rev = res.rev;
-                    newPig._deleted = true;
+                    newDoc._id = res.id;
+                    newDoc._rev = res.rev;
+                    newDoc._deleted = true;
 
                     // delete
-                    db.auditableSave(newPig, auditMetadata, function (err) {
+                    db.auditableSave(newDoc, auditMetadata, function (err) {
                         if (err) {
                             done(err);
                         }
@@ -220,7 +220,7 @@ describe('integration tests', function() {
                         return;
                     }
 
-                    checkAuditDocOnDeleting(db, newPigId, done);
+                    checkAuditDocOnDeleting(db, newDocId, done);
                 });
                 db.auditEvents.on('error', done);
             });
@@ -228,35 +228,35 @@ describe('integration tests', function() {
 
         describe('when called with multiple documents', function () {
             it('saves audit documents on creation', function (done) {
-                var newPig1 = {
+                var newDoc1 = {
                     color: 'blue'
-                }, newPig2 = {
+                }, newDoc2 = {
                     color: 'grey'
                 };
-                var newPigs = [newPig1, newPig2];
+                var newDocs = [newDoc1, newDoc2];
 
                 var auditMetadata = {
                     usefulMetadata: 'test'
                 };
-                var newPig1Id, newPig2Id;
+                var newDoc1Id, newDoc2Id;
 
                 // bulk creation
-                db.auditableSave(newPigs, auditMetadata, function (err, res) {
+                db.auditableSave(newDocs, auditMetadata, function (err, res) {
                     if (err) {
                         done(err);
                     }
-                    newPig1Id = res[0].id;
-                    newPig2Id = res[1].id;
+                    newDoc1Id = res[0].id;
+                    newDoc2Id = res[1].id;
                 });
 
 
                 db.auditEvents.on('archived', function () {
                     async.parallel([
                             function (callback) {
-                                checkAuditDocOnCreation(db, newPig1Id, callback);
+                                checkAuditDocOnCreation(db, newDoc1Id, callback);
                             },
                             function (callback) {
-                                checkAuditDocOnCreation(db, newPig2Id, callback);
+                                checkAuditDocOnCreation(db, newDoc2Id, callback);
                             }
                         ],
                         function (err) {
@@ -272,36 +272,36 @@ describe('integration tests', function() {
             });
 
             it('saves audit documents on editing', function (done) {
-                var newPig1 = {
+                var newDoc1 = {
                     color: 'blue'
-                }, newPig2 = {
+                }, newDoc2 = {
                     color: 'grey'
                 };
-                var newPigs = [newPig1, newPig2];
+                var newDocs = [newDoc1, newDoc2];
 
                 var auditMetadata = {
                     usefulMetadata: 'test'
                 };
-                var newPig1Id, newPig2Id, archivedEventCount = 0;
+                var newDoc1Id, newDoc2Id, archivedEventCount = 0;
 
                 // bulk creation
-                db.auditableSave(newPigs, auditMetadata, function (err, res) {
+                db.auditableSave(newDocs, auditMetadata, function (err, res) {
                     if (err) {
                         done(err);
                     }
-                    newPig1Id = res[0].id;
-                    newPig2Id = res[1].id;
+                    newDoc1Id = res[0].id;
+                    newDoc2Id = res[1].id;
 
-                    newPig1._id = res[0].id;
-                    newPig1._rev = res[0].rev;
-                    newPig1.color = 'red';
+                    newDoc1._id = res[0].id;
+                    newDoc1._rev = res[0].rev;
+                    newDoc1.color = 'red';
 
-                    newPig2._id = res[1].id;
-                    newPig2._rev = res[1].rev;
-                    newPig2.color = 'orange';
+                    newDoc2._id = res[1].id;
+                    newDoc2._rev = res[1].rev;
+                    newDoc2.color = 'orange';
 
                     // bulk edit
-                    db.auditableSave(newPigs, auditMetadata, function (err) {
+                    db.auditableSave(newDocs, auditMetadata, function (err) {
                         if (err) {
                             done(err);
                         }
@@ -316,10 +316,10 @@ describe('integration tests', function() {
 
                     async.parallel([
                             function (callback) {
-                                checkAuditDocOnEditing(db, newPig1Id, 'blue', 'red', callback);
+                                checkAuditDocOnEditing(db, newDoc1Id, 'blue', 'red', callback);
                             },
                             function (callback) {
-                                checkAuditDocOnEditing(db, newPig2Id, 'grey', 'orange', callback);
+                                checkAuditDocOnEditing(db, newDoc2Id, 'grey', 'orange', callback);
                             }
                         ],
                         function (err) {
@@ -335,36 +335,36 @@ describe('integration tests', function() {
             });
 
             it('saves audit document with deleted flag when _deleted=true', function (done) {
-                var newPig1 = {
+                var newDoc1 = {
                     color: 'blue'
-                }, newPig2 = {
+                }, newDoc2 = {
                     color: 'grey'
                 };
-                var newPigs = [newPig1, newPig2];
+                var newDocs = [newDoc1, newDoc2];
 
                 var auditMetadata = {
                     usefulMetadata: 'test'
                 };
-                var newPig1Id, newPig2Id, archivedEventCount = 0;
+                var newDoc1Id, newDoc2Id, archivedEventCount = 0;
 
                 // bulk creation
-                db.auditableSave(newPigs, auditMetadata, function (err, res) {
+                db.auditableSave(newDocs, auditMetadata, function (err, res) {
                     if (err) {
                         done(err);
                     }
-                    newPig1Id = res[0].id;
-                    newPig2Id = res[1].id;
+                    newDoc1Id = res[0].id;
+                    newDoc2Id = res[1].id;
 
-                    newPig1._id = res[0].id;
-                    newPig1._rev = res[0].rev;
-                    newPig1._deleted = true;
+                    newDoc1._id = res[0].id;
+                    newDoc1._rev = res[0].rev;
+                    newDoc1._deleted = true;
 
-                    newPig2._id = res[1].id;
-                    newPig2._rev = res[1].rev;
-                    newPig2.color = 'orange';
+                    newDoc2._id = res[1].id;
+                    newDoc2._rev = res[1].rev;
+                    newDoc2.color = 'orange';
 
                     // bulk edit
-                    db.auditableSave(newPigs, auditMetadata, function (err) {
+                    db.auditableSave(newDocs, auditMetadata, function (err) {
                         if (err) {
                             done(err);
                         }
@@ -379,10 +379,10 @@ describe('integration tests', function() {
 
                     async.parallel([
                             function (callback) {
-                                checkAuditDocOnDeleting(db, newPig1Id, callback);
+                                checkAuditDocOnDeleting(db, newDoc1Id, callback);
                             },
                             function (callback) {
-                                checkAuditDocOnEditing(db, newPig2Id, 'grey', 'orange', callback);
+                                checkAuditDocOnEditing(db, newDoc2Id, 'grey', 'orange', callback);
                             }
                         ],
                         function (err) {
@@ -401,24 +401,24 @@ describe('integration tests', function() {
 
     describe('method auditableRemove()', function () {
         it('saves audit document', function (done) {
-            var newPig = {
+            var newDoc = {
                 color: 'blue'
             };
             var auditMetadata = {
                 usefulMetadata: 'test'
             };
-            var newPigId, newPigRev, archivedEventCount = 0;
+            var newDocId, newDocRev, archivedEventCount = 0;
 
             //creation
-            db.auditableSave(newPig, auditMetadata, function (err, res) {
+            db.auditableSave(newDoc, auditMetadata, function (err, res) {
                 if (err) {
                     done(err);
                 }
-                newPigId = res.id;
-                newPigRev = res.rev;
+                newDocId = res.id;
+                newDocRev = res.rev;
 
                 // delete
-                db.auditableRemove(newPigId, newPigRev, auditMetadata, function (err) {
+                db.auditableRemove(newDocId, newDocRev, auditMetadata, function (err) {
                     if (err) {
                         done(err);
                     }
@@ -430,7 +430,7 @@ describe('integration tests', function() {
                     return;
                 }
 
-                checkAuditDocOnDeleting(db, newPigId, done);
+                checkAuditDocOnDeleting(db, newDocId, done);
             });
             db.auditEvents.on('error', done);
         });
