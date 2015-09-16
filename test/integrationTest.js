@@ -40,8 +40,8 @@ function checkAuditDocs(auditDocs, auditMetadata, originId) {
     });
 }
 
-function checkAuditDocOnCreation(db, newDocId, callback) {
-    db.view(GET_AUDIT_DOCS_VIEW_NAME, { key: newDocId }, function (err, res) {
+function checkAuditDocOnCreation(db, view, newDocId, callback) {
+    db.view(view, { key: newDocId }, function (err, res) {
         if (err) {
             callback(err);
         }
@@ -58,8 +58,8 @@ function checkAuditDocOnCreation(db, newDocId, callback) {
     });
 }
 
-function checkAuditDocOnEditing(db, newDocId, createColor, editColor, callback) {
-    db.view(GET_AUDIT_DOCS_VIEW_NAME, { key: newDocId }, function (err, res) {
+function checkAuditDocOnEditing(db, view, newDocId, createColor, editColor, callback) {
+    db.view(view, { key: newDocId }, function (err, res) {
         if (err) {
             callback(err);
         }
@@ -84,8 +84,8 @@ function checkAuditDocOnEditing(db, newDocId, createColor, editColor, callback) 
     });
 }
 
-function checkAuditDocOnDeleting(db, newDocId,  callback) {
-    db.view(GET_AUDIT_DOCS_VIEW_NAME, { key: newDocId }, function (err, res) {
+function checkAuditDocOnDeleting(db, view, newDocId,  callback) {
+    db.view(view, { key: newDocId }, function (err, res) {
         if (err) {
             callback(err);
         }
@@ -119,16 +119,403 @@ function checkAuditDocOnDeleting(db, newDocId,  callback) {
 }
 
 describe('integration tests', function() {
-    var connection, db;
-    beforeEach(function () {
-        connection = new (cradle.Connection)('127.0.0.1', 5984, { cache: false });
-        db = connection.database('monkeys');
-        db = cradleAuditify(db);
-    });
+    var connection = new (cradle.Connection)('127.0.0.1', 5984, { cache: false }),
+        db;
 
-    describe('method auditableSave()', function () {
-        describe('when called with single document', function () {
-            it('saves audit document on creation', function (done) {
+    describe('using the same database for auditing', function () {
+        beforeEach(function () {
+            db = connection.database('monkeys');
+            db = cradleAuditify(db);
+        });
+
+        describe('method auditableSave()', function () {
+            describe('when called with single document', function () {
+                it('saves audit document on creation', function (done) {
+                    var newDoc = {
+                        color: 'blue'
+                    };
+                    var auditMetadata = {
+                        usefulMetadata: 'test'
+                    };
+                    var newDocId;
+
+                    db.auditableSave(newDoc, auditMetadata, function (err, res) {
+                        if (err) {
+                            done(err);
+                        }
+                        newDocId = res.id;
+                    });
+
+                    db.auditEvents.on('archived', function () {
+                        checkAuditDocOnCreation(db, GET_AUDIT_DOCS_VIEW_NAME, newDocId, done);
+                    });
+                    db.auditEvents.on('error', done);
+                });
+
+                it('saves audit document on editing', function (done) {
+                    var newDoc = {
+                        color: 'blue'
+                    };
+                    var auditMetadata = {
+                        usefulMetadata: 'test'
+                    };
+                    var newDocId, archivedEventCount = 0;
+
+                    // create
+                    db.auditableSave(newDoc, auditMetadata, function (err, res) {
+                        if (err) {
+                            done(err);
+                        }
+                        newDocId = res.id;
+
+                        newDoc._id = res.id;
+                        newDoc._rev = res.rev;
+                        newDoc.color = 'red';
+
+                        // edit
+                        db.auditableSave(newDoc, auditMetadata, function (err) {
+                            if (err) {
+                                done(err);
+                            }
+                        });
+                    });
+
+                    db.auditEvents.on('archived', function () {
+                        if (++archivedEventCount && archivedEventCount === 1) {
+                            return;
+                        }
+                        checkAuditDocOnEditing(db, GET_AUDIT_DOCS_VIEW_NAME, newDocId, 'blue', 'red', done);
+
+                    });
+                    db.auditEvents.on('error', done);
+                });
+
+                it('saves audit document with deleted flag when _deleted=true', function (done) {
+                    var newDoc = {
+                        color: 'blue'
+                    };
+                    var auditMetadata = {
+                        usefulMetadata: 'test'
+                    };
+                    var newDocId, archivedEventCount = 0;
+
+                    // create
+                    db.auditableSave(newDoc, auditMetadata, function (err, res) {
+                        if (err) {
+                            done(err);
+                        }
+                        newDocId = res.id;
+
+                        newDoc._id = res.id;
+                        newDoc._rev = res.rev;
+                        newDoc._deleted = true;
+
+                        // delete
+                        db.auditableSave(newDoc, auditMetadata, function (err) {
+                            if (err) {
+                                done(err);
+                            }
+                        });
+                    });
+
+                    db.auditEvents.on('archived', function () {
+                        if (++archivedEventCount && archivedEventCount === 1) {
+                            return;
+                        }
+
+                        checkAuditDocOnDeleting(db, GET_AUDIT_DOCS_VIEW_NAME, newDocId, done);
+                    });
+                    db.auditEvents.on('error', done);
+                });
+            });
+
+            describe('when called with multiple documents', function () {
+                it('saves audit documents on creation', function (done) {
+                    var newDoc1 = {
+                        color: 'blue'
+                    }, newDoc2 = {
+                        color: 'grey'
+                    };
+                    var newDocs = [newDoc1, newDoc2];
+
+                    var auditMetadata = {
+                        usefulMetadata: 'test'
+                    };
+                    var newDoc1Id, newDoc2Id;
+
+                    // bulk creation
+                    db.auditableSave(newDocs, auditMetadata, function (err, res) {
+                        if (err) {
+                            done(err);
+                        }
+                        newDoc1Id = res[0].id;
+                        newDoc2Id = res[1].id;
+                    });
+
+
+                    db.auditEvents.on('archived', function () {
+                        async.parallel([
+                                function (callback) {
+                                    checkAuditDocOnCreation(db, GET_AUDIT_DOCS_VIEW_NAME, newDoc1Id, callback);
+                                },
+                                function (callback) {
+                                    checkAuditDocOnCreation(db, GET_AUDIT_DOCS_VIEW_NAME, newDoc2Id, callback);
+                                }
+                            ],
+                            function (err) {
+                                if (err) {
+                                    done(err);
+                                }
+                                done();
+                            });
+                    });
+
+
+                    db.auditEvents.on('error', done);
+                });
+
+                it('saves audit documents on editing', function (done) {
+                    var newDoc1 = {
+                        color: 'blue'
+                    }, newDoc2 = {
+                        color: 'grey'
+                    };
+                    var newDocs = [newDoc1, newDoc2];
+
+                    var auditMetadata = {
+                        usefulMetadata: 'test'
+                    };
+                    var newDoc1Id, newDoc2Id, archivedEventCount = 0;
+
+                    // bulk creation
+                    db.auditableSave(newDocs, auditMetadata, function (err, res) {
+                        if (err) {
+                            done(err);
+                        }
+                        newDoc1Id = res[0].id;
+                        newDoc2Id = res[1].id;
+
+                        newDoc1._id = res[0].id;
+                        newDoc1._rev = res[0].rev;
+                        newDoc1.color = 'red';
+
+                        newDoc2._id = res[1].id;
+                        newDoc2._rev = res[1].rev;
+                        newDoc2.color = 'orange';
+
+                        // bulk edit
+                        db.auditableSave(newDocs, auditMetadata, function (err) {
+                            if (err) {
+                                done(err);
+                            }
+                        });
+                    });
+
+
+                    db.auditEvents.on('archived', function () {
+                        if (++archivedEventCount && archivedEventCount === 1) {
+                            return;
+                        }
+
+                        async.parallel([
+                                function (callback) {
+                                    checkAuditDocOnEditing(db, GET_AUDIT_DOCS_VIEW_NAME, newDoc1Id, 'blue', 'red', callback);
+                                },
+                                function (callback) {
+                                    checkAuditDocOnEditing(db, GET_AUDIT_DOCS_VIEW_NAME, newDoc2Id, 'grey', 'orange', callback);
+                                }
+                            ],
+                            function (err) {
+                                if (err) {
+                                    done(err);
+                                }
+                                done();
+                            });
+                    });
+
+
+                    db.auditEvents.on('error', done);
+                });
+
+                it('saves audit document with deleted flag when _deleted=true', function (done) {
+                    var newDoc1 = {
+                        color: 'blue'
+                    }, newDoc2 = {
+                        color: 'grey'
+                    };
+                    var newDocs = [newDoc1, newDoc2];
+
+                    var auditMetadata = {
+                        usefulMetadata: 'test'
+                    };
+                    var newDoc1Id, newDoc2Id, archivedEventCount = 0;
+
+                    // bulk creation
+                    db.auditableSave(newDocs, auditMetadata, function (err, res) {
+                        if (err) {
+                            done(err);
+                        }
+                        newDoc1Id = res[0].id;
+                        newDoc2Id = res[1].id;
+
+                        newDoc1._id = res[0].id;
+                        newDoc1._rev = res[0].rev;
+                        newDoc1._deleted = true;
+
+                        newDoc2._id = res[1].id;
+                        newDoc2._rev = res[1].rev;
+                        newDoc2.color = 'orange';
+
+                        // bulk edit
+                        db.auditableSave(newDocs, auditMetadata, function (err) {
+                            if (err) {
+                                done(err);
+                            }
+                        });
+                    });
+
+
+                    db.auditEvents.on('archived', function () {
+                        if (++archivedEventCount && archivedEventCount === 1) {
+                            return;
+                        }
+
+                        async.parallel([
+                                function (callback) {
+                                    checkAuditDocOnDeleting(db, GET_AUDIT_DOCS_VIEW_NAME, newDoc1Id, callback);
+                                },
+                                function (callback) {
+                                    checkAuditDocOnEditing(db, GET_AUDIT_DOCS_VIEW_NAME, newDoc2Id, 'grey', 'orange', callback);
+                                }
+                            ],
+                            function (err) {
+                                if (err) {
+                                    done(err);
+                                }
+                                done();
+                            });
+                    });
+
+
+                    db.auditEvents.on('error', done);
+                });
+            });
+        });
+
+        describe('method auditableRemove()', function () {
+            it('saves audit document', function (done) {
+                var newDoc = {
+                    color: 'blue'
+                };
+                var auditMetadata = {
+                    usefulMetadata: 'test'
+                };
+                var newDocId, newDocRev, archivedEventCount = 0;
+
+                //creation
+                db.auditableSave(newDoc, auditMetadata, function (err, res) {
+                    if (err) {
+                        done(err);
+                    }
+                    newDocId = res.id;
+                    newDocRev = res.rev;
+
+                    // delete
+                    db.auditableRemove(newDocId, newDocRev, auditMetadata, function (err) {
+                        if (err) {
+                            done(err);
+                        }
+                    });
+                });
+
+                db.auditEvents.on('archived', function () {
+                    if (++archivedEventCount && archivedEventCount === 1) {
+                        return;
+                    }
+
+                    checkAuditDocOnDeleting(db, GET_AUDIT_DOCS_VIEW_NAME, newDocId, done);
+                });
+                db.auditEvents.on('error', done);
+            });
+        });
+
+        describe('method auditableMerge()', function () {
+            it('saves audit document', function (done) {
+                var newDoc = {
+                    color: 'blue'
+                };
+                var auditMetadata = {
+                    usefulMetadata: 'test'
+                };
+                var newDocId, archivedEventCount = 0;
+
+                //creation
+                db.auditableSave(newDoc, auditMetadata, function (err, res) {
+                    if (err) {
+                        done(err);
+                    }
+                    newDocId = res.id;
+
+                    // merge
+                    db.auditableMerge(newDocId, { color: 'pinky' }, auditMetadata, function (err) {
+                        if (err) {
+                            done(err);
+                        }
+                    });
+                });
+
+                db.auditEvents.on('archived', function () {
+                    if (++archivedEventCount && archivedEventCount === 1) {
+                        return;
+                    }
+
+                    checkAuditDocOnEditing(db, GET_AUDIT_DOCS_VIEW_NAME, newDocId, 'blue', 'pinky', done);
+                });
+                db.auditEvents.on('error', done);
+            });
+        });
+
+        describe('method auditablePut()', function () {
+            it('saves audit document', function (done) {
+                var newDoc = {
+                    color: 'blue'
+                };
+                var auditMetadata = {
+                    usefulMetadata: 'test'
+                };
+                var newDocId, archivedEventCount = 0;
+
+                //creation
+                db.auditableSave(newDoc, auditMetadata, function (err, res) {
+                    if (err) {
+                        done(err);
+                    }
+                    newDocId = res.id;
+                    newDoc._id = res.id;
+                    newDoc._rev = res.rev;
+                    newDoc.color = 'black';
+
+                    // merge
+                    db.auditablePut(newDocId, newDoc, auditMetadata, function (err) {
+                        if (err) {
+                            done(err);
+                        }
+                    });
+                });
+
+                db.auditEvents.on('archived', function () {
+                    if (++archivedEventCount && archivedEventCount === 1) {
+                        return;
+                    }
+
+                    checkAuditDocOnEditing(db, GET_AUDIT_DOCS_VIEW_NAME, newDocId, 'blue', 'black', done);
+                });
+                db.auditEvents.on('error', done);
+            });
+        });
+
+        describe('method auditablePost()', function () {
+            it('saves audit document', function (done) {
                 var newDoc = {
                     color: 'blue'
                 };
@@ -137,7 +524,8 @@ describe('integration tests', function() {
                 };
                 var newDocId;
 
-                db.auditableSave(newDoc, auditMetadata, function (err, res) {
+                //creation
+                db.auditablePost(newDoc, auditMetadata, function (err, res) {
                     if (err) {
                         done(err);
                     }
@@ -145,395 +533,98 @@ describe('integration tests', function() {
                 });
 
                 db.auditEvents.on('archived', function () {
-                    checkAuditDocOnCreation(db, newDocId, done);
-                });
-                db.auditEvents.on('error', done);
-            });
-
-            it('saves audit document on editing', function (done) {
-                var newDoc = {
-                    color: 'blue'
-                };
-                var auditMetadata = {
-                    usefulMetadata: 'test'
-                };
-                var newDocId, archivedEventCount = 0;
-
-                // create
-                db.auditableSave(newDoc, auditMetadata, function (err, res) {
-                    if (err) {
-                        done(err);
-                    }
-                    newDocId = res.id;
-
-                    newDoc._id = res.id;
-                    newDoc._rev = res.rev;
-                    newDoc.color = 'red';
-
-                    // edit
-                    db.auditableSave(newDoc, auditMetadata, function (err) {
-                        if (err) {
-                            done(err);
-                        }
-                    });
-                });
-
-                db.auditEvents.on('archived', function () {
-                    if (++archivedEventCount && archivedEventCount === 1) {
-                        return;
-                    }
-                    checkAuditDocOnEditing(db, newDocId, 'blue', 'red', done);
-
-                });
-                db.auditEvents.on('error', done);
-            });
-
-            it('saves audit document with deleted flag when _deleted=true', function (done) {
-                var newDoc = {
-                    color: 'blue'
-                };
-                var auditMetadata = {
-                    usefulMetadata: 'test'
-                };
-                var newDocId, archivedEventCount = 0;
-
-                // create
-                db.auditableSave(newDoc, auditMetadata, function (err, res) {
-                    if (err) {
-                        done(err);
-                    }
-                    newDocId = res.id;
-
-                    newDoc._id = res.id;
-                    newDoc._rev = res.rev;
-                    newDoc._deleted = true;
-
-                    // delete
-                    db.auditableSave(newDoc, auditMetadata, function (err) {
-                        if (err) {
-                            done(err);
-                        }
-                    });
-                });
-
-                db.auditEvents.on('archived', function () {
-                    if (++archivedEventCount && archivedEventCount === 1) {
-                        return;
-                    }
-
-                    checkAuditDocOnDeleting(db, newDocId, done);
+                    checkAuditDocOnCreation(db, GET_AUDIT_DOCS_VIEW_NAME, newDocId, done);
                 });
                 db.auditEvents.on('error', done);
             });
         });
+    });
 
-        describe('when called with multiple documents', function () {
-            it('saves audit documents on creation', function (done) {
-                var newDoc1 = {
-                    color: 'blue'
-                }, newDoc2 = {
-                    color: 'grey'
-                };
-                var newDocs = [newDoc1, newDoc2];
+    describe('using separate database for auditing', function () {
+        var auditDatabase;
 
-                var auditMetadata = {
-                    usefulMetadata: 'test'
-                };
-                var newDoc1Id, newDoc2Id;
+        beforeEach(function () {
+            db = connection.database('monkeys');
+            auditDatabase = connection.database('audit');
+            db = cradleAuditify(db, {
+                database: auditDatabase
+            });
+        });
 
-                // bulk creation
-                db.auditableSave(newDocs, auditMetadata, function (err, res) {
-                    if (err) {
-                        done(err);
-                    }
-                    newDoc1Id = res[0].id;
-                    newDoc2Id = res[1].id;
-                });
+        describe('method auditableSave()', function () {
+            describe('when called with multiple documents', function () {
+                it('saves audit documents', function (done) {
+                    var newDoc1 = {
+                        color: 'blue'
+                    }, newDoc2 = {
+                        color: 'grey'
+                    }, newDoc3 = {
+                        color: 'bold'
+                    };
+                    var newDocs = [newDoc1, newDoc2];
 
+                    var auditMetadata = {
+                        usefulMetadata: 'test'
+                    };
+                    var newDoc1Id, newDoc2Id, newDoc3Id, archivedEventCount = 0;
 
-                db.auditEvents.on('archived', function () {
-                    async.parallel([
-                            function (callback) {
-                                checkAuditDocOnCreation(db, newDoc1Id, callback);
-                            },
-                            function (callback) {
-                                checkAuditDocOnCreation(db, newDoc2Id, callback);
-                            }
-                        ],
-                        function (err) {
+                    // bulk creation
+                    db.auditableSave(newDocs, auditMetadata, function (err, res) {
+                        if (err) {
+                            done(err);
+                        }
+                        newDoc1Id = res[0].id;
+                        newDoc2Id = res[1].id;
+
+                        newDoc1._id = res[0].id;
+                        newDoc1._rev = res[0].rev;
+                        newDoc1._deleted = true;
+
+                        newDoc2._id = res[1].id;
+                        newDoc2._rev = res[1].rev;
+                        newDoc2.color = 'orange';
+
+                        newDocs.push(newDoc3);
+
+                        // bulk edit
+                        db.auditableSave(newDocs, auditMetadata, function (err, res) {
                             if (err) {
                                 done(err);
                             }
-                            done();
+
+                            newDoc3Id = res[2].id;
                         });
-                });
-
-
-                db.auditEvents.on('error', done);
-            });
-
-            it('saves audit documents on editing', function (done) {
-                var newDoc1 = {
-                    color: 'blue'
-                }, newDoc2 = {
-                    color: 'grey'
-                };
-                var newDocs = [newDoc1, newDoc2];
-
-                var auditMetadata = {
-                    usefulMetadata: 'test'
-                };
-                var newDoc1Id, newDoc2Id, archivedEventCount = 0;
-
-                // bulk creation
-                db.auditableSave(newDocs, auditMetadata, function (err, res) {
-                    if (err) {
-                        done(err);
-                    }
-                    newDoc1Id = res[0].id;
-                    newDoc2Id = res[1].id;
-
-                    newDoc1._id = res[0].id;
-                    newDoc1._rev = res[0].rev;
-                    newDoc1.color = 'red';
-
-                    newDoc2._id = res[1].id;
-                    newDoc2._rev = res[1].rev;
-                    newDoc2.color = 'orange';
-
-                    // bulk edit
-                    db.auditableSave(newDocs, auditMetadata, function (err) {
-                        if (err) {
-                            done(err);
-                        }
                     });
-                });
 
 
-                db.auditEvents.on('archived', function () {
-                    if (++archivedEventCount && archivedEventCount === 1) {
-                        return;
-                    }
-
-                    async.parallel([
-                            function (callback) {
-                                checkAuditDocOnEditing(db, newDoc1Id, 'blue', 'red', callback);
-                            },
-                            function (callback) {
-                                checkAuditDocOnEditing(db, newDoc2Id, 'grey', 'orange', callback);
-                            }
-                        ],
-                        function (err) {
-                            if (err) {
-                                done(err);
-                            }
-                            done();
-                        });
-                });
-
-
-                db.auditEvents.on('error', done);
-            });
-
-            it('saves audit document with deleted flag when _deleted=true', function (done) {
-                var newDoc1 = {
-                    color: 'blue'
-                }, newDoc2 = {
-                    color: 'grey'
-                };
-                var newDocs = [newDoc1, newDoc2];
-
-                var auditMetadata = {
-                    usefulMetadata: 'test'
-                };
-                var newDoc1Id, newDoc2Id, archivedEventCount = 0;
-
-                // bulk creation
-                db.auditableSave(newDocs, auditMetadata, function (err, res) {
-                    if (err) {
-                        done(err);
-                    }
-                    newDoc1Id = res[0].id;
-                    newDoc2Id = res[1].id;
-
-                    newDoc1._id = res[0].id;
-                    newDoc1._rev = res[0].rev;
-                    newDoc1._deleted = true;
-
-                    newDoc2._id = res[1].id;
-                    newDoc2._rev = res[1].rev;
-                    newDoc2.color = 'orange';
-
-                    // bulk edit
-                    db.auditableSave(newDocs, auditMetadata, function (err) {
-                        if (err) {
-                            done(err);
+                    db.auditEvents.on('archived', function () {
+                        if (++archivedEventCount && archivedEventCount === 1) {
+                            return;
                         }
+
+                        async.parallel([
+                                function (callback) {
+                                    checkAuditDocOnDeleting(auditDatabase, 'audit/byOriginId', newDoc1Id, callback);
+                                },
+                                function (callback) {
+                                    checkAuditDocOnEditing(auditDatabase, 'audit/byOriginId', newDoc2Id, 'grey', 'orange', callback);
+                                },
+                                function (callback) {
+                                    checkAuditDocOnCreation(auditDatabase, 'audit/byOriginId', newDoc3Id, callback);
+                                }
+                            ],
+                            function (err) {
+                                if (err) {
+                                    done(err);
+                                }
+                                done();
+                            });
                     });
-                });
 
 
-                db.auditEvents.on('archived', function () {
-                    if (++archivedEventCount && archivedEventCount === 1) {
-                        return;
-                    }
-
-                    async.parallel([
-                            function (callback) {
-                                checkAuditDocOnDeleting(db, newDoc1Id, callback);
-                            },
-                            function (callback) {
-                                checkAuditDocOnEditing(db, newDoc2Id, 'grey', 'orange', callback);
-                            }
-                        ],
-                        function (err) {
-                            if (err) {
-                                done(err);
-                            }
-                            done();
-                        });
-                });
-
-
-                db.auditEvents.on('error', done);
-            });
-        });
-    });
-
-    describe('method auditableRemove()', function () {
-        it('saves audit document', function (done) {
-            var newDoc = {
-                color: 'blue'
-            };
-            var auditMetadata = {
-                usefulMetadata: 'test'
-            };
-            var newDocId, newDocRev, archivedEventCount = 0;
-
-            //creation
-            db.auditableSave(newDoc, auditMetadata, function (err, res) {
-                if (err) {
-                    done(err);
-                }
-                newDocId = res.id;
-                newDocRev = res.rev;
-
-                // delete
-                db.auditableRemove(newDocId, newDocRev, auditMetadata, function (err) {
-                    if (err) {
-                        done(err);
-                    }
+                    db.auditEvents.on('error', done);
                 });
             });
-
-            db.auditEvents.on('archived', function () {
-                if (++archivedEventCount && archivedEventCount === 1) {
-                    return;
-                }
-
-                checkAuditDocOnDeleting(db, newDocId, done);
-            });
-            db.auditEvents.on('error', done);
-        });
-    });
-
-    describe('method auditableMerge()', function () {
-        it('saves audit document', function (done) {
-            var newDoc = {
-                color: 'blue'
-            };
-            var auditMetadata = {
-                usefulMetadata: 'test'
-            };
-            var newDocId, archivedEventCount = 0;
-
-            //creation
-            db.auditableSave(newDoc, auditMetadata, function (err, res) {
-                if (err) {
-                    done(err);
-                }
-                newDocId = res.id;
-
-                // merge
-                db.auditableMerge(newDocId, { color: 'pinky'}, auditMetadata, function (err) {
-                    if (err) {
-                        done(err);
-                    }
-                });
-            });
-
-            db.auditEvents.on('archived', function () {
-                if (++archivedEventCount && archivedEventCount === 1) {
-                    return;
-                }
-
-                checkAuditDocOnEditing(db, newDocId, 'blue', 'pinky', done);
-            });
-            db.auditEvents.on('error', done);
-        });
-    });
-
-    describe('method auditablePut()', function () {
-        it('saves audit document', function (done) {
-            var newDoc = {
-                color: 'blue'
-            };
-            var auditMetadata = {
-                usefulMetadata: 'test'
-            };
-            var newDocId, archivedEventCount = 0;
-
-            //creation
-            db.auditableSave(newDoc, auditMetadata, function (err, res) {
-                if (err) {
-                    done(err);
-                }
-                newDocId = res.id;
-                newDoc._id = res.id;
-                newDoc._rev = res.rev;
-                newDoc.color = 'black';
-
-                // merge
-                db.auditablePut(newDocId, newDoc, auditMetadata, function (err) {
-                    if (err) {
-                        done(err);
-                    }
-                });
-            });
-
-            db.auditEvents.on('archived', function () {
-                if (++archivedEventCount && archivedEventCount === 1) {
-                    return;
-                }
-
-                checkAuditDocOnEditing(db, newDocId, 'blue', 'black', done);
-            });
-            db.auditEvents.on('error', done);
-        });
-    });
-
-    describe('method auditablePost()', function () {
-        it('saves audit document', function (done) {
-            var newDoc = {
-                color: 'blue'
-            };
-            var auditMetadata = {
-                usefulMetadata: 'test'
-            };
-            var newDocId;
-
-            //creation
-            db.auditablePost(newDoc, auditMetadata, function (err, res) {
-                if (err) {
-                    done(err);
-                }
-                newDocId = res.id;
-            });
-
-            db.auditEvents.on('archived', function () {
-                checkAuditDocOnCreation(db, newDocId, done);
-            });
-            db.auditEvents.on('error', done);
         });
     });
 });

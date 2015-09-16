@@ -4,9 +4,22 @@
       "_id": "_design/monkeys",
       "views": {
         "all": {
-          "map": "function (doc) { if (doc.color) emit(doc._id, doc) }"
+          "map": "function (doc) { emit(doc._id, doc) }"
         },
         "auditDocsByOriginId": {
+          "map": "function (doc) { if (doc.type === 'audit' && doc['a_metadata']['originId']) emit(doc['a_metadata']['originId'], doc) }"
+        }
+      }
+    }
+  ],
+  "audit": [
+    {
+      "_id": "_design/audit",
+      "views": {
+        "all": {
+          "map": "function (doc) { emit(doc._id, doc) }"
+        },
+        "byOriginId": {
           "map": "function (doc) { if (doc.type === 'audit' && doc['a_metadata']['originId']) emit(doc['a_metadata']['originId'], doc) }"
         }
       }

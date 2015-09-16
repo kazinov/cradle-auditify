@@ -13,7 +13,8 @@ var defaultOptions = {
     auditMetadataFieldName: 'a_metadata',
     typeFieldName: 'type',
     originTypeFieldName: 'originType',
-    auditType: 'audit'
+    auditType: 'audit',
+    database: null
 };
 
 /** Save doc or array of docs and audit copies.
@@ -85,7 +86,7 @@ function auditableRemove(id, rev, auditMetadata, callback) {
 
 function _archive(doc, auditMetadata) {
     var auditDocument = createAuditDocument(doc, auditMetadata, this.auditOptions);
-    this.save(auditDocument, this._onArchived.bind(this));
+    this.auditOptions.database.save(auditDocument, this._onArchived.bind(this));
 }
 
 function _onArchived (err, res) {
@@ -195,6 +196,7 @@ module.exports = function (db, options) {
     db.auditOptions = {};
     _.assign(db.auditOptions, defaultOptions);
     _.assign(db.auditOptions, options);
+    db.auditOptions.database = db.auditOptions.database || db;
 
     db.auditEvents = new events.EventEmitter();
 
