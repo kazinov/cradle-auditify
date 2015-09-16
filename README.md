@@ -135,7 +135,7 @@ API
  });
  ```
  
- ### auditEvents ###
+### auditEvents ###
 
  Node.js event emitter instance. Provides two types of events: 'archived' and 'error'
  
