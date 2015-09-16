@@ -1,34 +1,86 @@
 var assert = require('assert');
+var async = require('async');
 var cradleAuditify = require('../src/cradleAuditify');
 var cradle = require('cradle');
 
+var METADATA_FIELD = 'a_metadata';
+var ORIGINID_FIELD = 'a_originId';
+var DELETED_FIELD = 'a_deleted';
+var TIMESTAMP_BEFORE_FIELD = 'a_timestampBefore';
+var TIMESTAMP_AFTER_FIELD = 'a_timestampAfter';
+var GET_AUDIT_DOCS_VIEW_NAME = 'pigs/auditDocsByOriginId';
+
 function checkAuditDoc(auditDoc, auditMetadata, originId, deleted) {
     deleted = deleted || false;
-    assert.equal(auditDoc['a_metadata']['a_originId'], originId);
+    assert.equal(auditDoc[METADATA_FIELD][ORIGINID_FIELD], originId);
 
     if (auditMetadata) {
         Object.keys(auditMetadata).forEach(function (key) {
-            assert.equal(auditDoc['a_metadata'][key], auditMetadata[key]);
+            assert.equal(auditDoc[METADATA_FIELD][key], auditMetadata[key]);
         });
     }
 
     if (deleted) {
-        assert.equal(auditDoc['a_metadata']['a_deleted'], true);
+        assert.equal(auditDoc[METADATA_FIELD][DELETED_FIELD], true);
     } else {
-        assert.equal(auditDoc['a_metadata']['a_deleted'], undefined);
+        assert.equal(auditDoc[METADATA_FIELD][DELETED_FIELD], undefined);
     }
 
-    var timestampBefore = auditDoc['a_metadata']['a_timestampBefore'];
-    var timestampAfter = auditDoc['a_metadata']['a_timestampAfter'];
+    var timestampBefore = auditDoc[METADATA_FIELD][TIMESTAMP_BEFORE_FIELD];
+    var timestampAfter = auditDoc[METADATA_FIELD][TIMESTAMP_AFTER_FIELD];
 
     assert.ok(timestampBefore);
     assert.ok(timestampAfter);
     assert.ok(new Date(timestampAfter) > new Date(timestampBefore));
 }
 
-function checkAuditDocsOnEditing(auditDocs, auditMetadata, originId) {
+function checkAuditDocs(auditDocs, auditMetadata, originId) {
     auditDocs.forEach(function (auditDoc) {
        checkAuditDoc(auditDoc, auditMetadata, originId);
+    });
+}
+
+function checkAuditDocOnCreation(db, newPigId, callback) {
+    db.view(GET_AUDIT_DOCS_VIEW_NAME, { key: newPigId }, function (err, res) {
+        if (err) {
+            callback(err);
+        }
+
+        assert.equal(res.rows.length, 1);
+        var auditDoc = res.rows[0].value;
+        checkAuditDoc(
+            auditDoc,
+            {
+                usefulMetadata: 'test'
+            },
+            newPigId);
+        callback();
+    });
+}
+
+function checkAuditDocOnEditing(db, newPigId, createColor, editColor, callback) {
+    db.view(GET_AUDIT_DOCS_VIEW_NAME, { key: newPigId }, function (err, res) {
+        if (err) {
+            callback(err);
+        }
+
+        assert.equal(res.rows.length, 2);
+
+        var auditDocs = res.rows.map(function (row) {
+            return row.value;
+        });
+
+        var auditDocFromCreationStep = auditDocs[0];
+        var auditDocFromEditingStep = auditDocs[1];
+        assert.equal(auditDocFromCreationStep.color, createColor);
+        assert.equal(auditDocFromEditingStep.color, editColor);
+        checkAuditDocs(
+            auditDocs,
+            {
+                usefulMetadata: 'test'
+            },
+            newPigId);
+        callback();
     });
 }
 
@@ -58,21 +110,7 @@ describe('integration tests', function() {
                 });
 
                 db.auditEvents.on('archived', function () {
-                    db.view('pigs/auditDocsByOriginId', { key: newPigId }, function (err, res) {
-                        if (err) {
-                            done(err);
-                        }
-
-                        assert.equal(res.rows.length, 1);
-                        var auditDoc = res.rows[0].value;
-                        checkAuditDoc(
-                            auditDoc,
-                            {
-                                usefulMetadata: 'test'
-                            },
-                            newPigId);
-                        done();
-                    });
+                    checkAuditDocOnCreation(db, newPigId, done);
                 });
                 db.auditEvents.on('error', done);
             });
@@ -84,7 +122,7 @@ describe('integration tests', function() {
                 var auditMetadata = {
                     usefulMetadata: 'test'
                 };
-                var newPigId, archivedEventCount = 0;;
+                var newPigId, archivedEventCount = 0;
 
                 // create
                 db.auditableSave(newPig, auditMetadata, function (err, res) {
@@ -98,7 +136,7 @@ describe('integration tests', function() {
                     newPig.color = 'red';
 
                     // edit
-                    db.auditableSave(newPig, auditMetadata, function (err, res) {
+                    db.auditableSave(newPig, auditMetadata, function (err) {
                         if (err) {
                             done(err);
                         }
@@ -110,31 +148,55 @@ describe('integration tests', function() {
                     if (archivedEventCount === 1) {
                         return;
                     }
+                    checkAuditDocOnEditing(db, newPigId, 'blue', 'red', done);
 
-                    db.view('pigs/auditDocsByOriginId', { key: newPigId }, function (err, res) {
-                        if (err) {
-                            done(err);
-                        }
-
-                        assert.equal(res.rows.length, 2);
-
-                        var auditDocs = res.rows.map(function (row) {
-                            return row.value;
-                        });
-
-                        var auditDocFromCreationStep = auditDocs[0];
-                        var auditDocFromEditingStep = auditDocs[1];
-                        assert.equal(auditDocFromCreationStep.color, 'blue');
-                        assert.equal(auditDocFromEditingStep.color, 'red');
-                        checkAuditDocsOnEditing(
-                            auditDocs,
-                            {
-                                usefulMetadata: 'test'
-                            },
-                            newPigId);
-                        done();
-                    });
                 });
+                db.auditEvents.on('error', done);
+            });
+        });
+
+        describe('when called with multiple documents', function () {
+            it('saves audit documents on creation', function (done) {
+                var newPig1 = {
+                    color: 'blue'
+                }, newPig2 = {
+                    color: 'grey'
+                };
+                var newPigs = [newPig1, newPig2];
+
+                var auditMetadata = {
+                    usefulMetadata: 'test'
+                };
+                var newPig1Id, newPig2Id;
+
+                // bulk creation
+                db.auditableSave(newPigs, auditMetadata, function (err, res) {
+                    if (err) {
+                        done(err);
+                    }
+                    newPig1Id = res[0].id;
+                    newPig2Id = res[1].id;
+                });
+
+
+                db.auditEvents.on('archived', function () {
+                    async.parallel([
+                            function (callback) {
+                                checkAuditDocOnCreation(db, newPig1Id, callback);
+                            },
+                            function (callback) {
+                                checkAuditDocOnCreation(db, newPig2Id, callback);
+                            }
+                        ],
+                        function (err) {
+                            if (err) {
+                                done(err);
+                            }
+                            done();
+                        });
+                });
+
+
                 db.auditEvents.on('error', done);
             });
         });
