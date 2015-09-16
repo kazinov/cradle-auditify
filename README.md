@@ -112,7 +112,7 @@ API
  db = cradleAuditify(db);
  ```
 
- ### auditableSave() ###
+### auditableSave() ###
  
  A wrapper for original Cradle ```save``` method. Allows bulk operations just as original ```save```
 
@@ -133,7 +133,7 @@ API
  });
  ```
  
- ### auditableMerge() ###
+### auditableMerge() ###
  
  A wrapper for original Cradle ```merge``` method.
 
