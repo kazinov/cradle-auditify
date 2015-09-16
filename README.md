@@ -102,7 +102,6 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
 
 
         ``` js
-        
         db.auditableSave(
         // New document to create/update
         {
@@ -117,5 +116,4 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
         function (err, res) {
                // Handle response
         });
-
         ```
