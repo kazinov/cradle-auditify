@@ -3,6 +3,7 @@ cradle-auditify
 
 Plugin for [cradle](https://github.com/flatiron/cradle) which provides a way make all changes in your CouchDB database
 auditable.
+Approach was inspired by [Tugdual Grall post](http://blog.couchbase.com/how-implement-document-versioning-couchbase).
 
 How it works
 ------------
@@ -26,7 +27,7 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
  }
  ```
 
- So a new document like this will be saved into database:
+ So a new document will be saved into database:
 
  ```
     _id: "936caf5e007ee3570e50d7ab3b36b1df",
@@ -34,7 +35,7 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
     color: "black"
  ```
 
- And also new audit document will be created in the database:
+ And also **new audit document will be created in the database**:
 
  ```
     _id: "345ewghyy45007ee3570e50d7ab3b36c19f"
@@ -55,7 +56,7 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
      color: "red"
   ```
 
-  This document will be updated in the database as usual and also **new audit document will be created in the database**:
+  This document will be updated as usual and also **new audit document will be created in the database**:
 
 
  ```
