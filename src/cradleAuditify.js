@@ -54,6 +54,15 @@ function auditablePut(id, doc, auditMetadata, callback) {
     });
 }
 
+function auditablePost(doc, auditMetadata, callback) {
+    var that = this;
+    auditMetadata = initializeAuditMetadata(auditMetadata, this.auditOptions);
+
+    that.post(doc, function (err, res) {
+        return that._auditCallbackHandler(err, res, doc, auditMetadata, callback);
+    });
+}
+
 /** Remove doc and save audit copy.
  * Callback is being invoked as soon as remove operation ended.
  * Audit copies saving goes on in background.
@@ -188,10 +197,13 @@ module.exports = function (db, options) {
     _.assign(db.auditOptions, options);
 
     db.auditEvents = new events.EventEmitter();
+
     db.auditableSave = auditableSave;
     db.auditablePut = auditablePut;
+    db.auditablePost = auditablePost;
     db.auditableMerge = auditableMerge;
     db.auditableRemove = auditableRemove;
+
     db._archive = _archive;
     db._onArchived = _onArchived;
     db._auditCallbackHandler = _auditCallbackHandler;

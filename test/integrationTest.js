@@ -511,4 +511,29 @@ describe('integration tests', function() {
             db.auditEvents.on('error', done);
         });
     });
+
+    describe('method auditablePost()', function () {
+        it('saves audit document', function (done) {
+            var newDoc = {
+                color: 'blue'
+            };
+            var auditMetadata = {
+                usefulMetadata: 'test'
+            };
+            var newDocId;
+
+            //creation
+            db.auditablePost(newDoc, auditMetadata, function (err, res) {
+                if (err) {
+                    done(err);
+                }
+                newDocId = res.id;
+            });
+
+            db.auditEvents.on('archived', function () {
+                checkAuditDocOnCreation(db, newDocId, done);
+            });
+            db.auditEvents.on('error', done);
+        });
+    });
 });
