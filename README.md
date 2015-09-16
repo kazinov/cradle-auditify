@@ -21,8 +21,8 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
  - auditableSave
  - auditablePut
  - auditablePost
- - auditableMerge
  - auditableRemove
+ - auditableMerge
 
  Each of these methods internally calls original Cradle method (save, put, post, merge or remove) and also saves
  **audit document** which is just a copy of an original document but with another _id and containing metadata for
