@@ -8,7 +8,7 @@ var ORIGINID_FIELD = 'originId';
 var DELETED_FIELD = 'deleted';
 var TIMESTAMP_BEFORE_FIELD = 'timestampBefore';
 var TIMESTAMP_AFTER_FIELD = 'timestampAfter';
-var GET_AUDIT_DOCS_VIEW_NAME = 'pigs/auditDocsByOriginId';
+var GET_AUDIT_DOCS_VIEW_NAME = 'monkeys/auditDocsByOriginId';
 
 function checkAuditDoc(auditDoc, auditMetadata, originId, deleted) {
     deleted = deleted || false;
@@ -122,7 +122,7 @@ describe('integration tests', function() {
     var connection, db;
     beforeEach(function () {
         connection = new (cradle.Connection)('127.0.0.1', 5984, { cache: false });
-        db = connection.database('pigs');
+        db = connection.database('monkeys');
         db = cradleAuditify(db);
     });
 
