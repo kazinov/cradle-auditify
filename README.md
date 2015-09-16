@@ -70,14 +70,16 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
 
 
  ```
-    _id: "56757fghf3570e50d7ab3b36e440"
-    _rev: "1-a345df4dc07a79834771143fa0d908",
-    color: 'red'
-    a_metadata: {
-        "timestampBefore": "2015-09-16T13:31:12.305Z",
-        "timestampAfter": "2015-09-16T13:31:12.308Z",
-        "originId": "936caf5e007ee3570e50d7ab3b36b1df"
+ {
+ _id: "56757fghf3570e50d7ab3b36e440"
+ _rev: "1-a345df4dc07a79834771143fa0d908",
+ color: 'red'
+ a_metadata: {
+     "timestampBefore": "2015-09-16T13:31:12.305Z",
+     "timestampAfter": "2015-09-16T13:31:12.308Z",
+     "originId": "936caf5e007ee3570e50d7ab3b36b1df"
     }
+}
  ```
 
   Then we call ```database.auditableRemove``` for this document. Document will be removed from the database as
@@ -110,45 +112,45 @@ API
  db = cradleAuditify(db);
  ```
 
-    ### auditableSave() ###
-    A wrapper for original Cradle ```save``` method. Allows bulk operations just as original ```save```
+ ### auditableSave() ###
+ A wrapper for original Cradle ```save``` method. Allows bulk operations just as original ```save```
 
-    ``` js
-    db.auditableSave(
-    // New document to create/update
-    {
-        color: 'blue'
-    },
-    // Arbitrary audit matadata object. Will be added as embeded object to audit document. Nullable
-    {
-        endpoint: '/api/animals',
-        method: 'POST',
-        userId: 4234
-    },
-    function (err, res) {
-    // Handle response
-    });
-    ```
-    
-    ### auditableMerge() ###
-    A wrapper for original Cradle ```merge``` method.
+ ``` js
+ db.auditableSave(
+ // New document to create/update
+ {
+     color: 'blue'
+ },
+ // Arbitrary audit matadata object. Will be added as embeded object to audit document. Nullable
+ {
+     endpoint: '/api/animals',
+     method: 'POST',
+     userId: 4234
+ },
+ function (err, res) {
+ // Handle response
+ });
+ ```
+ 
+ ### auditableMerge() ###
+ A wrapper for original Cradle ```merge``` method.
 
 
-    ``` js
-    db.auditableMerge(
-    // id of the document
-    'sdf34523452sdfsafasdf23f',
-    // document to merge
-    {
-        color: 'orange'
-    },
-    // Arbitrary audit matadata object. Will be added as embeded object to audit document. Nullable
-    {
-        endpoint: '/api/animals',
-        method: 'POST',
-        userId: 4234
-    },
-    function (err, res) {
-    // Handle response
-    });
-    ```
+ ``` js
+ db.auditableMerge(
+ // id of the document
+ 'sdf34523452sdfsafasdf23f',
+ // document to merge
+ {
+     color: 'orange'
+ },
+ // Arbitrary audit matadata object. Will be added as embeded object to audit document. Nullable
+ {
+     endpoint: '/api/animals',
+     method: 'POST',
+     userId: 4234
+ },
+ function (err, res) {
+ // Handle response
+ });
+ ```
