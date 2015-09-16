@@ -83,29 +83,31 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
   Then we call ```database.auditableRemove``` for this document. Document will be removed from the database as
   usuall and also **new audit document will be created in the database**:
 
-   ```
-      _id: "6546ere50d7ab3b36e440"
-      _rev: "1-34dgds4dc07a79834771143fa0d908",
-      a_metadata: {
-          "timestampBefore": "2015-09-16T13:31:12.355Z",
-          "timestampAfter": "2015-09-16T13:31:12.361Z",
-          "originId": "936caf5e007ee3570e50d7ab3b36b1df",
-          "deleted": true
-      }
-   ```
+ ```
+ {
+    _id: "6546ere50d7ab3b36e440"
+    _rev: "1-34dgds4dc07a79834771143fa0d908",
+    a_metadata: {
+        "timestampBefore": "2015-09-16T13:31:12.355Z",
+        "timestampAfter": "2015-09-16T13:31:12.361Z",
+        "originId": "936caf5e007ee3570e50d7ab3b36b1df",
+        "deleted": true
+    }
+}
+ ```
 
-   API
-   ---
+ API
+ ---
 ### Extending Cradle database ###
 
-    ``` js
-    var cradle = require('cradle');
-    var cradleAuditify = require('cradle-auditify');
+ ``` js
+ var cradle = require('cradle');
+ var cradleAuditify = require('cradle-auditify');
 
-    var connection = new (cradle.Connection)('127.0.0.1', 5984, { cache: false });
-    var db = connection.database('monkeys');
-    db = cradleAuditify(db);
-    ```
+ var connection = new (cradle.Connection)('127.0.0.1', 5984, { cache: false });
+ var db = connection.database('monkeys');
+ db = cradleAuditify(db);
+ ```
 
     ### auditableSave() ###
     A wrapper for original Cradle ```save``` method. Allows bulk operations just as original ```save```
