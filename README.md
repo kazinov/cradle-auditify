@@ -125,9 +125,12 @@ API
  Options can be passed to ```cradleAuditify``` function as a second parameter. 
  
  ``` js
+ var db = connection.database('monkeys');
+ var auditDb = connection.database('audit');
+ 
  db = cradleAuditify(db, {
-    // you can optionally specify separate database for storing audit documents
-    database: autit
+    // you can optionally specify a separate database for storing audit documents
+    database: auditDb
  });
  ```
 
