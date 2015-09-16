@@ -17,6 +17,7 @@ How it works
 ------------
 
 Cradle-auditify extends original cradle ```Database``` instance with methods:
+
  - auditableSave
  - auditablePut
  - auditablePost
