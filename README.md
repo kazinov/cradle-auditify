@@ -96,8 +96,9 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
 }
  ```
 
- API
- ---
+API
+---
+
 ### Extending Cradle database ###
 
  ``` js
