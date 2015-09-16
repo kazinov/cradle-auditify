@@ -27,6 +27,7 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
 
  ```
  {
+    type: 'animal',
     color: 'black'
  }
  ```
@@ -37,6 +38,7 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
  {
     _id: "936caf5e007ee3570e50d7ab3b36b1df",
     _rev: "1-fcc4a130df1a91f981a80bed05e5d2ab",
+    type: 'animal',
     color: "black"
  }
  ```
@@ -47,11 +49,13 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
  {
     _id: "345ewghyy45007ee3570e50d7ab3b36c19f"
     _rev: "1-de8785f14dc07a79834771143fa0d908",
+    type: 'audit',
     color: 'black'
     a_metadata: {
         "timestampBefore": "2015-09-16T13:31:12.237Z",
         "timestampAfter": "2015-09-16T13:31:12.257Z",
-        "originId": "936caf5e007ee3570e50d7ab3b36b1df"
+        "originId": "936caf5e007ee3570e50d7ab3b36b1df",
+        "originType": "animal"
     }
  }
  ```
@@ -62,6 +66,7 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
  {
     _id: "936caf5e007ee3570e50d7ab3b36b1df",
     _rev: "1-fcc4a130df1a91f981a80bed05e5d2ab",
+    type: 'animal',
     color: "red"
  }
  ```
@@ -73,11 +78,13 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
  {
  _id: "56757fghf3570e50d7ab3b36e440"
  _rev: "1-a345df4dc07a79834771143fa0d908",
+ type: 'audit',
  color: 'red'
  a_metadata: {
      "timestampBefore": "2015-09-16T13:31:12.305Z",
      "timestampAfter": "2015-09-16T13:31:12.308Z",
-     "originId": "936caf5e007ee3570e50d7ab3b36b1df"
+     "originId": "936caf5e007ee3570e50d7ab3b36b1df",
+     "originType": "animal"
     }
 }
  ```
@@ -89,6 +96,7 @@ Cradle-auditify extends original cradle ```Database``` instance with methods:
  {
     _id: "6546ere50d7ab3b36e440"
     _rev: "1-34dgds4dc07a79834771143fa0d908",
+    type: 'audit',
     a_metadata: {
         "timestampBefore": "2015-09-16T13:31:12.355Z",
         "timestampAfter": "2015-09-16T13:31:12.361Z",
@@ -111,6 +119,9 @@ API
  var db = connection.database('monkeys');
  db = cradleAuditify(db);
  ```
+ 
+### Configuration ### 
+Options can be passed to ```cradleAuditify``` function as a second parameter
 
 ### auditableSave() ###
  
