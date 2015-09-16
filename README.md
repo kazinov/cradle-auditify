@@ -113,6 +113,7 @@ API
  ```
 
  ### auditableSave() ###
+ 
  A wrapper for original Cradle ```save``` method. Allows bulk operations just as original ```save```
 
  ``` js
@@ -133,6 +134,7 @@ API
  ```
  
  ### auditableMerge() ###
+ 
  A wrapper for original Cradle ```merge``` method.
 
 
