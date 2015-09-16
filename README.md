@@ -9,7 +9,7 @@ Features
 ------------
  - supports bulk operations
  - doesn't damage performance
- - allows using separate database instance for audit docs
+ - optionally allows using separate database instance for audit docs
  - allows to easily implement user activity logging by storing audit metadata on audit docs
  - inherits Cradle's advantages
  - good test coverage
