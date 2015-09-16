@@ -84,6 +84,40 @@ function checkAuditDocOnEditing(db, newPigId, createColor, editColor, callback) 
     });
 }
 
+function checkAuditDocOnDeleting(db, newPigId,  callback) {
+    db.view(GET_AUDIT_DOCS_VIEW_NAME, { key: newPigId }, function (err, res) {
+        if (err) {
+            callback(err);
+        }
+
+        assert.equal(res.rows.length, 2);
+
+        var auditDocs = res.rows.map(function (row) {
+            return row.value;
+        });
+
+        var auditDocFromCreationStep = auditDocs[0];
+        var auditDocFromDeletingStep = auditDocs[1];
+
+        checkAuditDoc(
+            auditDocFromCreationStep,
+            {
+                usefulMetadata: 'test'
+            },
+            newPigId);
+
+        checkAuditDoc(
+            auditDocFromDeletingStep,
+            {
+                usefulMetadata: 'test'
+            },
+            newPigId,
+            true
+        );
+        callback();
+    });
+}
+
 describe('integration tests', function() {
     var connection, db;
     beforeEach(function () {
@@ -144,12 +178,49 @@ describe('integration tests', function() {
                 });
 
                 db.auditEvents.on('archived', function () {
-                    archivedEventCount++;
-                    if (archivedEventCount === 1) {
+                    if (++archivedEventCount && archivedEventCount === 1) {
                         return;
                     }
                     checkAuditDocOnEditing(db, newPigId, 'blue', 'red', done);
 
+                });
+                db.auditEvents.on('error', done);
+            });
+
+            it('saves audit document with deleted flag when _deleted=true', function (done) {
+                var newPig = {
+                    color: 'blue'
+                };
+                var auditMetadata = {
+                    usefulMetadata: 'test'
+                };
+                var newPigId, archivedEventCount = 0;
+
+                // create
+                db.auditableSave(newPig, auditMetadata, function (err, res) {
+                    if (err) {
+                        done(err);
+                    }
+                    newPigId = res.id;
+
+                    newPig._id = res.id;
+                    newPig._rev = res.rev;
+                    newPig._deleted = true;
+
+                    // delete
+                    db.auditableSave(newPig, auditMetadata, function (err) {
+                        if (err) {
+                            done(err);
+                        }
+                    });
+                });
+
+                db.auditEvents.on('archived', function () {
+                    if (++archivedEventCount && archivedEventCount === 1) {
+                        return;
+                    }
+
+                    checkAuditDocOnDeleting(db, newPigId, done);
                 });
                 db.auditEvents.on('error', done);
             });
@@ -239,8 +310,7 @@ describe('integration tests', function() {
 
 
                 db.auditEvents.on('archived', function () {
-                    archivedEventCount++;
-                    if (archivedEventCount === 1) {
+                    if (++archivedEventCount && archivedEventCount === 1) {
                         return;
                     }
 
