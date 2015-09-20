@@ -14,7 +14,7 @@
     "email": "dm.kazinov@gmail.com"
   },
   "main": "./src/cradleAuditify",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "dependencies": {
     "cradle": "^0.6.9",
     "lodash": "^3.10.1"
