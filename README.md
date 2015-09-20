@@ -239,29 +239,6 @@ API
  });
  ```
  
-### auditablePut() ###
- 
- A wrapper for original Cradle ```put``` method.
-
- ``` js
- db.auditablePut(
- // id of the document
- 'sdf34523452sdfsafasdf23f',
- // document to put
- {
-     color: 'orange'
- },
- // Arbitrary audit matadata object. Will be added as embeded object to audit document. Nullable
- {
-     endpoint: '/api/animals',
-     method: 'POST',
-     userId: 4234
- },
- function (err, res) {
- // Handle response
- });
- ```
- 
 ### auditableRemove() ###
  
  A wrapper for original Cradle ```remove``` method.
