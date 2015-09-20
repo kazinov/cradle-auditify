@@ -1,5 +1,6 @@
 cradle-auditify
 ===============
+[![Build Status](https://api.travis-ci.org/kazinov/cradle-auditify.png)](https://travis-ci.org/kazinov/cradle-auditify)
 
 Plugin for [cradle](https://github.com/flatiron/cradle) which provides a way make all changes in your CouchDB database
 auditable.
